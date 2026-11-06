@@ -1,0 +1,62 @@
+---
+import { packages } from "../data/packages";
+import { included } from "../data/content";
+import { money } from "../config";
+---
+
+<section id="packages" class="border-b border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+  <div class="mx-auto w-full max-w-[1240px] px-6 py-16 md:px-10 md:py-24">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <div class="max-w-[54ch]">
+        <p class="mono text-muted">02 — что я делаю</p>
+        <h2 class="mt-4 text-[clamp(28px,4.2vw,46px)] font-semibold leading-[1.05] tracking-[-0.03em]">
+          Три типа сайтов, без экзотики
+        </h2>
+      </div>
+      <p class="max-w-[34ch] text-[15px] leading-relaxed text-ink/70">
+        Если сомневаетесь, какой нужен, — пришлите пару слов о деле, скажу сам.
+      </p>
+    </div>
+
+    <div class="mt-10 grid gap-px bg-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] border border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] md:grid-cols-3">
+      {
+        packages.map((pkg) => (
+          <article class="flex flex-col bg-paper p-6 md:p-7">
+            <div class="flex items-baseline justify-between gap-4">
+              <span class="mono text-muted">{pkg.num}</span>
+              <span class="font-display text-[17px] font-semibold tracking-[-0.02em]">от {money(pkg.price)} ₽</span>
+            </div>
+
+            <h3 class="mt-6 font-display text-[24px] font-semibold leading-tight tracking-[-0.03em]">{pkg.name}</h3>
+            <p class="mt-3 text-[14.5px] leading-relaxed text-ink/75">{pkg.tagline}</p>
+
+            <ul class="mt-5 space-y-2">
+              {pkg.items.map((item) => (
+                <li class="relative pl-6 text-[14px] leading-snug text-ink/85">
+                  <span class="absolute left-0 top-0 font-mono text-[13px] text-ink/30" aria-hidden="true">+</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <p class="mt-auto pt-6 text-[13px] leading-relaxed text-muted">{pkg.bestFor}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="mt-16">
+      <p class="mono text-muted">Что входит в любую работу</p>
+      <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
+        {
+          included.map((item) => (
+            <div>
+              <h3 class="font-display text-[15px] font-semibold leading-tight tracking-[-0.01em]">{item.title}</h3>
+              <p class="mt-2 text-[14px] leading-relaxed text-ink/70">{item.text}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

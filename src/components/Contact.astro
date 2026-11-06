@@ -1,0 +1,127 @@
+---
+import { config } from "../config";
+---
+
+<section id="contact" class="border-b border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+  <div class="mx-auto w-full max-w-[1240px] px-6 py-16 md:px-10 md:py-24">
+    <div class="grid gap-12 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-6">
+        <p class="mono text-muted">07 — связаться</p>
+        <h2 class="mt-4 max-w-[18ch] text-[clamp(30px,4.6vw,52px)] font-semibold leading-[1.02] tracking-[-0.035em]">
+          Расскажите о своём деле
+        </h2>
+        <p class="mt-5 max-w-[46ch] text-[16px] leading-relaxed text-ink/75">
+          Двух строк достаточно: «делаю торты» или «автосервис, нужен сайт с ценами на ремонт». Скажу,
+          что подойдёт и сколько это займёт. Если сайт вам не нужен — тоже скажу.
+        </p>
+
+        <div class="mt-10 space-y-px border-y border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+          <a
+            href={config.contacts.telegram.url}
+            target="_blank"
+            rel="noopener"
+            class="group flex items-center justify-between gap-4 py-4"
+          >
+            <span class="mono text-muted">Telegram</span>
+            <span class="flex items-center gap-3 text-[16px]">
+              {config.contacts.telegram.label}
+              <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
+            </span>
+          </a>
+          <a
+            href={config.contacts.email.url}
+            class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
+          >
+            <span class="mono text-muted">Почта</span>
+            <span class="text-[16px]">{config.contacts.email.label}</span>
+          </a>
+        </div>
+
+        <p class="mono mt-6 text-muted">Отвечаю в течение рабочего дня</p>
+      </div>
+
+      <div class="lg:col-span-6">
+        <form id="lead-form" action={config.formAction} class="border border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] bg-paper p-6 md:p-8" novalidate>
+          <p class="mono text-muted">Или оставьте заявку</p>
+
+          <div class="mt-5 space-y-4">
+            <label class="block">
+              <span class="mono text-muted">Как вас зовут</span>
+              <input class="field mt-2" type="text" name="name" autocomplete="name" placeholder="Имя" required />
+            </label>
+
+            <label class="block">
+              <span class="mono text-muted">Что за дело и что нужно</span>
+              <textarea
+                class="field mt-2 min-h-[132px] resize-y"
+                name="task"
+                id="task"
+                placeholder="Например: маникюр на дому, нужен сайт с ценами и записью"
+                required></textarea>
+            </label>
+
+            <input class="hidden" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          </div>
+
+          <button type="submit" class="btn btn-lime mt-5 w-full">
+            Отправить
+            <span aria-hidden="true">→</span>
+          </button>
+
+          <p class="mt-4 text-[12.5px] leading-relaxed text-ink/55">
+            Данные нужны только чтобы ответить. Никаких рассылок и передачи третьим лицам.
+          </p>
+
+          <p id="form-status" class="mt-4 text-[14px] leading-relaxed" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { config } from "../config";
+
+  const form = document.getElementById("lead-form") as HTMLFormElement | null;
+  const status = document.getElementById("form-status");
+  const tg = config.contacts.telegram.url;
+
+  if (form && status) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const name = String(data.get("name") ?? "").trim();
+      const task = String(data.get("task") ?? "").trim();
+      const honeypot = String(data.get("company") ?? "");
+
+      if (honeypot) return;
+
+      if (name.length < 2 || task.length < 10) {
+        status.textContent = "Имя и пара слов о деле — так я пойму, о чём речь.";
+        return;
+      }
+
+      status.textContent = "Отправляю…";
+      const button = form.querySelector("button[type=submit]") as HTMLButtonElement | null;
+      if (button) button.disabled = true;
+
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, task }),
+        });
+
+        if (!response.ok) throw new Error(String(response.status));
+
+        status.textContent = "Отправлено. Ответлю в течение рабочего дня.";
+        form.reset();
+      } catch {
+        const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\n${task}`);
+        status.innerHTML = `Форма на этом хостинге не подключена. Напишите напрямую: <a class="underline" href="${tg}?text=${text}" target="_blank" rel="noopener">Telegram</a> — текст уже собран.`;
+      } finally {
+        if (button) button.disabled = false;
+      }
+    });
+  }
+</script>

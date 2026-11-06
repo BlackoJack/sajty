@@ -1,0 +1,46 @@
+---
+import { benefits, niches } from "../data/content";
+---
+
+<section id="why" class="border-b border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+  <div class="mx-auto w-full max-w-[1240px] px-6 py-16 md:px-10 md:py-24">
+    <div class="max-w-[62ch]">
+      <p class="mono text-muted">01 — зачем это вам</p>
+      <h2 class="mt-4 text-[clamp(28px,4.2vw,46px)] font-semibold leading-[1.05] tracking-[-0.03em]">
+        Сайт нужен не всем. Вот как понять, нужен ли он вам
+      </h2>
+    </div>
+
+    <div class="mt-10 grid gap-px bg-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] md:grid-cols-2">
+      {
+        benefits.map((item) => (
+          <div class="bg-paper p-6 md:p-7">
+            <h3 class="font-display text-[17px] font-semibold leading-tight tracking-[-0.02em]">{item.title}</h3>
+            <p class="mt-3 text-[14.5px] leading-relaxed text-ink/75">{item.text}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <p class="mt-6 max-w-[70ch] text-[14.5px] leading-relaxed text-ink/60">
+      Сайт не заменяет рекламу и сам по себе клиентов не приводит. Он делает другое: человек, который уже
+      про вас услышал, за минуту понимает, чем вы занимаетесь, сколько это стоит и как записаться.
+    </p>
+
+    <div class="mt-12">
+      <p class="mono text-muted">Кому подойдёт</p>
+      <ul class="mt-4 flex flex-wrap gap-2">
+        {
+          niches.map((niche) => (
+            <li class="border border-[color-mix(in_srgb,var(--color-ink)_16%,transparent)] px-3 py-1.5 text-[13.5px] text-ink/80">
+              {niche}
+            </li>
+          ))
+        }
+        <li class="border border-dashed border-[color-mix(in_srgb,var(--color-ink)_16%,transparent)] px-3 py-1.5 text-[13.5px] text-muted">
+          и ваше дело, если его нет в списке
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

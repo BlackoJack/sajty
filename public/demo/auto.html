@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Автосервис — демо</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Onest", system-ui, sans-serif; background: #14161a; color: #f2f1ee; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+  header { border-bottom: 1px solid #2a2e35; }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+  .brand { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 16px; letter-spacing: -0.02em; }
+  .bar nav { display: flex; gap: 26px; font-size: 14px; color: #a5a9b0; }
+  .phone { font-weight: 600; font-size: 15px; }
+  .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: end; padding: 58px 0 44px; }
+  .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #9ef01a; margin-bottom: 16px; }
+  h1 { font-family: "Unbounded", sans-serif; font-size: 54px; line-height: 1.03; letter-spacing: -0.04em; font-weight: 600; }
+  .lead { margin-top: 18px; font-size: 17px; line-height: 1.55; color: #b6bac1; max-width: 44ch; }
+  .stats { display: flex; gap: 36px; margin-top: 30px; }
+  .stat b { display: block; font-family: "Unbounded", sans-serif; font-size: 26px; }
+  .stat span { font-size: 12px; color: #8b9099; letter-spacing: 0.08em; text-transform: uppercase; }
+  .btn { background: #9ef01a; color: #14161a; padding: 16px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .card { background: #1b1e24; border: 1px solid #2b2f37; border-radius: 10px; overflow: hidden; }
+  .thumb { height: 116px; background: linear-gradient(150deg, #2c313a, #3d444f); }
+  .card .body { padding: 16px; }
+  .card .name { font-size: 15px; font-weight: 600; }
+  .card .desc { margin-top: 5px; font-size: 12.5px; color: #969ba4; line-height: 1.45; }
+  .card .row { margin-top: 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .price { font-family: "Unbounded", sans-serif; font-size: 16px; }
+  .time { font-size: 11.5px; color: #8b9099; }
+  section { padding: 22px 0 46px; }
+  .sec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; }
+  .sec-head h2 { font-family: "Unbounded", sans-serif; font-size: 24px; letter-spacing: -0.03em; }
+  .sec-head span { font-size: 13px; color: #8b9099; }
+  footer { border-top: 1px solid #2a2e35; padding: 22px 0 34px; font-size: 13px; color: #8b9099; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap bar">
+      <div class="brand">ГАРАЖ 54</div>
+      <nav><span>Услуги</span><span>Цены</span><span>Работы</span><span>Контакты</span></nav>
+      <div class="phone">+7 383 000-00-00</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="kicker">Автосервис · Новосибирск</div>
+        <h1>Ремонт<br />без сюрпризов<br />в счёте</h1>
+        <p class="lead">Сначала диагностика и цена, потом работа. Если что-то меняется по ходу — звоним и спрашиваем, а не ставим перед фактом.</p>
+        <div class="stats">
+          <div class="stat"><b>11 лет</b><span>на одном месте</span></div>
+          <div class="stat"><b>2 400</b><span>машин в год</span></div>
+          <div class="stat"><b>1 день</b><span>средний ремонт</span></div>
+        </div>
+      </div>
+      <div>
+        <span class="btn">Записаться на диагностику</span>
+      </div>
+    </div>
+
+    <section>
+      <div class="sec-head">
+        <h2>Услуги и цены</h2>
+        <span>цены «от», точная — после осмотра</span>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Диагностика</div><div class="desc">Компьютерная, с распечаткой ошибок</div><div class="row"><span class="price">1 200 ₽</span><span class="time">40 мин</span></div></div></div>
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Замена масла</div><div class="desc">Со снятием защиты, утилизация включена</div><div class="row"><span class="price">900 ₽</span><span class="time">30 мин</span></div></div></div>
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Тормозные колодки</div><div class="desc">Передние и задние, любые марки</div><div class="row"><span class="price">2 500 ₽</span><span class="time">1,5 часа</span></div></div></div>
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Развал-схождение</div><div class="desc">3D-стенд, распечатка до и после</div><div class="row"><span class="price">2 800 ₽</span><span class="time">1 час</span></div></div></div>
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Подвеска</div><div class="desc">Диагностика ходовой на подъёмнике</div><div class="row"><span class="price">1 500 ₽</span><span class="time">45 мин</span></div></div></div>
+        <div class="card"><div class="thumb"></div><div class="body"><div class="name">Кондиционер</div><div class="desc">Заправка, поиск утечки, антибактериальная</div><div class="row"><span class="price">2 200 ₽</span><span class="time">1 час</span></div></div></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="wrap" style="display:flex;justify-content:space-between;width:100%">
+      <span>ул. Большевистская, 101 · пн–сб 09:00–20:00</span>
+      <span>запись на сайте, в Telegram и по телефону</span>
+    </div>
+  </footer>
+</body>
+</html>

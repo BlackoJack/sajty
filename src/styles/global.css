@@ -1,0 +1,368 @@
+@import "@fontsource-variable/onest/index.css";
+@import "@fontsource-variable/unbounded/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f1eee7;
+  --color-paper-soft: #e9e5da;
+  --color-ink: #111214;
+  --color-muted: #5f635e;
+  --color-lime: #c6f24e;
+  --color-dark: #0e0f10;
+  --color-alert: #e4572e;
+
+  --font-display: "Unbounded Variable", "Unbounded", system-ui, sans-serif;
+  --font-sans: "Onest Variable", "Onest", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  --ease-out-quint: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 2px;
+    padding: 0.95rem 1.4rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: transform 0.2s var(--ease-out-quint), background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn-lime {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+
+  .btn-lime:hover {
+    background: color-mix(in srgb, var(--color-lime) 80%, var(--color-ink));
+  }
+
+  .btn-ghost {
+    border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+    color: var(--color-ink);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+  }
+
+  .btn-dark {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .btn-dark:hover {
+    background: color-mix(in srgb, var(--color-ink) 85%, var(--color-lime));
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 22%;
+    }
+  }
+}
+
+/* ── мокап браузера в hero ─────────────────────────────── */
+.frame {
+  border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+  background: color-mix(in srgb, var(--color-paper) 60%, white);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+}
+
+.frame-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 18%, transparent);
+}
+
+.frame-url {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.page-mock {
+  padding: 1rem;
+}
+
+.mock-line {
+  height: 8px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-ink) 14%, transparent);
+}
+
+.mock-line.short {
+  width: 46%;
+}
+
+.mock-h {
+  height: 16px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+}
+
+.mock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.mock-tile {
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-ink) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
+
+.mock-tile.tall {
+  aspect-ratio: 1 / 1;
+}
+
+.mock-switch {
+  display: flex;
+  gap: 4px;
+}
+
+.mock-switch button {
+  flex: 1;
+  padding: 0.4rem 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent);
+  border-radius: 2px;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.mock-switch button[aria-pressed="true"] {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border-color: var(--color-ink);
+}
+
+/* ── калькулятор ──────────────────────────────────────── */
+.field {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+  background: transparent;
+  border-radius: 2px;
+  padding: 0.8rem 0.9rem;
+  font-size: 15px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--color-ink);
+  background: color-mix(in srgb, white 45%, transparent);
+}
+
+.field::placeholder {
+  color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
+  border-radius: 2px;
+  text-align: left;
+  font-size: 14px;
+  transition: background-color 0.18s, border-color 0.18s;
+}
+
+.opt:hover {
+  border-color: color-mix(in srgb, var(--color-ink) 34%, transparent);
+}
+
+.opt[aria-pressed="true"] {
+  background: var(--color-lime);
+  border-color: var(--color-ink);
+}
+
+.opt .tick {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 40%, transparent);
+  border-radius: 2px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.opt[aria-pressed="true"] .tick {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-lime);
+}
+
+.opt[aria-pressed="true"] .tick::after {
+  content: "✓";
+}
+
+/* ── аккордеон ─────────────────────────────────────────── */
+details.faq-item {
+  border-top: 1px solid color-mix(in srgb, var(--color-ink) 13%, transparent);
+}
+
+details.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+details.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+details.faq-item summary::after {
+  content: "+";
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1;
+  flex: none;
+  transition: transform 0.2s var(--ease-out-quint);
+}
+
+details.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+details.faq-item .answer {
+  padding: 0 2.5rem 1.3rem 0;
+  color: color-mix(in srgb, var(--color-ink) 72%, var(--color-paper));
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,33 @@
+---
+import { config } from "../config";
+const year = 2026;
+---
+
+<footer class="bg-paper">
+  <div class="mx-auto w-full max-w-[1240px] px-6 py-12 md:px-10">
+    <div class="flex flex-col gap-8 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] pt-8 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="font-display text-[18px] font-semibold tracking-[-0.02em]">{config.role}</p>
+        <p class="mono mt-2 text-muted">{config.name} · {config.city}</p>
+      </div>
+
+      <nav class="flex flex-wrap gap-x-7 gap-y-2" aria-label="Контакты">
+        <a href={config.contacts.telegram.url} class="text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener">Telegram</a>
+        <a href={config.contacts.email.url} class="text-[14px] text-ink/75 transition-colors hover:text-ink">Почта</a>
+        <a href="#top" class="text-[14px] text-ink/75 transition-colors hover:text-ink">Наверх ↑</a>
+      </nav>
+    </div>
+
+    <div class="mt-10 flex flex-col gap-3 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] pt-6 md:flex-row md:items-center md:justify-between">
+      <p class="mono text-muted">© {year} · сайты для небольших дел</p>
+      <p class="mono text-muted">этот сайт сделан так же, как я делаю ваши</p>
+    </div>
+  </div>
+</footer>
+
+<div class="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] bg-paper/95 p-3 backdrop-blur md:hidden">
+  <a href={config.contacts.telegram.url} class="btn btn-lime w-full" target="_blank" rel="noopener">
+    Написать в Telegram
+    <span aria-hidden="true">→</span>
+  </a>
+</div>

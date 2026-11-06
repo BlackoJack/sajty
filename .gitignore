@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.npm-cache/
+.env
+.DS_Store
+.gh-cache/
+_ff*/
+_serve/
+_*.png
+_check.png

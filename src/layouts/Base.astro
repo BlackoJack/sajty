@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import { config, asset } from "../config";
+
+const { title, description, ogImage } = config.meta;
+const canonical = new URL(Astro.url.pathname, config.siteUrl).toString();
+const ogUrl = new URL(asset(ogImage), config.siteUrl).toString();
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: `${config.role} — ${config.name}`,
+  description,
+  url: config.siteUrl,
+  areaServed: "RU",
+  availableLanguage: "ru",
+  serviceType: "Создание сайтов",
+  provider: { "@type": "Person", name: config.name },
+  offers: {
+    "@type": "Offer",
+    priceCurrency: "RUB",
+    price: config.price.visitka,
+    description: "Сайт-визитка",
+  },
+};
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={asset("favicon.svg")} type="image/svg+xml" />
+    <link rel="sitemap" href={asset("sitemap-index.xml")} />
+    <meta name="theme-color" content="#f1eee7" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:site_name" content={config.role} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+
+  <body class="grain antialiased">
+    <a
+      href="#packages"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
+    >
+      Перейти к содержанию
+    </a>
+    <slot />
+  </body>
+</html>

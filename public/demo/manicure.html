@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Студия маникюра — демо</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Onest", system-ui, sans-serif;
+    background: #f7f2ec;
+    color: #241c17;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+  header { border-bottom: 1px solid #e0d5c9; }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 76px; }
+  .brand { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .bar nav { display: flex; gap: 28px; font-size: 14px; color: #5e5148; }
+  .phone { font-weight: 600; font-size: 15px; }
+  .hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; padding: 64px 0 56px; }
+  .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #a1613f; margin-bottom: 18px; }
+  h1 { font-family: "Unbounded", sans-serif; font-size: 58px; line-height: 1.02; letter-spacing: -0.04em; font-weight: 600; }
+  .lead { margin-top: 20px; font-size: 17px; line-height: 1.55; color: #5b4c42; max-width: 46ch; }
+  .cta { margin-top: 30px; display: flex; gap: 12px; align-items: center; }
+  .btn { background: #241c17; color: #f7f2ec; padding: 15px 26px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+  .note { font-size: 13px; color: #8a7a6d; }
+  .visual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .photo { border-radius: 14px; aspect-ratio: 3/4; }
+  .p1 { background: linear-gradient(150deg, #e8c4b0, #c98d6f 70%); }
+  .p2 { background: linear-gradient(160deg, #d9c7bb, #a8887a 60%); margin-top: 28px; }
+  .p3 { background: linear-gradient(140deg, #efd9cd, #d7a98f 70%); }
+  .p4 { background: linear-gradient(150deg, #c9b2a4, #8d6f60 65%); margin-top: 28px; }
+  section.svc { border-top: 1px solid #e0d5c9; padding: 44px 0; }
+  .svc h2 { font-family: "Unbounded", sans-serif; font-size: 26px; letter-spacing: -0.03em; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card { background: #fffdfa; border: 1px solid #ebe0d4; border-radius: 12px; padding: 20px; }
+  .card .name { font-size: 16px; font-weight: 600; }
+  .card .desc { margin-top: 6px; font-size: 13px; color: #7b6a5e; line-height: 1.45; }
+  .card .price { margin-top: 14px; font-family: "Unbounded", sans-serif; font-size: 17px; }
+  footer { border-top: 1px solid #e0d5c9; padding: 26px 0 40px; display: flex; justify-content: space-between; font-size: 13px; color: #7b6a5e; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap bar">
+      <div class="brand">студия «Лиза»</div>
+      <nav><span>Услуги</span><span>Работы</span><span>Отзывы</span><span>Адрес</span></nav>
+      <div class="phone">+7 913 000-00-00</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="kicker">Новосибирск · центр</div>
+        <h1>Маникюр,<br />к которому<br />возвращаются</h1>
+        <p class="lead">Стерильные инструменты, гели и камуфляж, который держится четыре недели. Запись на неделю вперёд — без ожидания в коридоре.</p>
+        <div class="cta">
+          <span class="btn">Записаться</span>
+          <span class="note">свободное время на этой неделе</span>
+        </div>
+      </div>
+      <div class="visual">
+        <div class="photo p1"></div>
+        <div class="photo p2"></div>
+        <div class="photo p3"></div>
+        <div class="photo p4"></div>
+      </div>
+    </div>
+
+    <section class="svc">
+      <h2>Услуги</h2>
+      <div class="grid">
+        <div class="card"><div class="name">Маникюр с покрытием</div><div class="desc">Аппаратный, кутикула, база и цвет</div><div class="price">1 900 ₽</div></div>
+        <div class="card"><div class="name">Наращивание</div><div class="desc">Гель, любая длина, коррекция через 3–4 недели</div><div class="price">3 200 ₽</div></div>
+        <div class="card"><div class="name">Педикюр</div><div class="desc">Аппаратный, с покрытием и уходом</div><div class="price">2 400 ₽</div></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="wrap" style="display:flex;justify-content:space-between;width:100%">
+      <span>ул. Ленина, 24 · ежедневно 10:00–21:00</span>
+      <span>запись через Telegram и по телефону</span>
+    </div>
+  </footer>
+</body>
+</html>

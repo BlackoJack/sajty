@@ -1,0 +1,38 @@
+---
+import { steps, guarantees } from "../data/content";
+---
+
+<section id="process" class="border-b border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+  <div class="mx-auto w-full max-w-[1240px] px-6 py-16 md:px-10 md:py-24">
+    <p class="mono text-muted">04 — как проходит работа</p>
+    <h2 class="mt-4 max-w-[24ch] text-[clamp(28px,4.2vw,46px)] font-semibold leading-[1.05] tracking-[-0.03em]">
+      Четыре шага, без сюрпризов
+    </h2>
+
+    <ol class="mt-12 grid gap-px bg-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] md:grid-cols-2 lg:grid-cols-4">
+      {
+        steps.map((step) => (
+          <li class="bg-paper p-6 lg:p-7">
+            <span class="mono text-muted">{step.num}</span>
+            <h3 class="mt-4 font-display text-[18px] font-semibold tracking-[-0.02em]">{step.title}</h3>
+            <p class="mt-3 text-[14px] leading-relaxed text-ink/75">{step.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="mt-16">
+      <p class="mono text-muted">Что защищает вас</p>
+      <div class="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
+        {
+          guarantees.map((item) => (
+            <div class="border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] pt-4">
+              <h3 class="font-display text-[15.5px] font-semibold tracking-[-0.01em]">{item.title}</h3>
+              <p class="mt-2 max-w-[46ch] text-[14px] leading-relaxed text-ink/70">{item.text}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
