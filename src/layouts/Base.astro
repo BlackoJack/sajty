@@ -3,15 +3,19 @@ import "../styles/global.css";
 import { config, asset } from "../config";
 
 const { title, description, ogImage } = config.meta;
-const canonical = new URL(Astro.url.pathname, config.siteUrl).toString();
-const ogUrl = new URL(asset(ogImage), config.siteUrl).toString();
+
+// site берётся из astro.config (SITE_URL в CI), config.siteUrl — только запасной вариант для локальной сборки
+const siteUrl = (Astro.site ?? new URL(config.siteUrl)).toString().replace(/\/$/, "");
+const siteRoot = `${siteUrl}${import.meta.env.BASE_URL}`;
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const ogUrl = new URL(asset(ogImage), siteUrl).toString();
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Service",
   name: `${config.role} — ${config.name}`,
   description,
-  url: config.siteUrl,
+  url: siteRoot,
   areaServed: "RU",
   availableLanguage: "ru",
   serviceType: "Создание сайтов",

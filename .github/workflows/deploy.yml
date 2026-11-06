@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -36,14 +36,14 @@ jobs:
 
       - name: Build
         env:
-          # configure-pages отдаёт базовый адрес и подпапку репозитория,
-          # поэтому сборка сама подстраивается под project pages
-          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          # origin — это https://USER.github.io, base_path — /имя-репозитория.
+          # Вместе они дают правильные canonical, OG и sitemap без ручных правок.
+          SITE_URL: ${{ steps.pages.outputs.origin }}
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
