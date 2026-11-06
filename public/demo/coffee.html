@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Кофейня на выезд — демо</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Onest", system-ui, sans-serif; background: #f4ede1; color: #1e2a22; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+  header { border-bottom: 1px solid #ddd0bd; }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 74px; }
+  .brand { font-family: "Unbounded", sans-serif; font-weight: 600; font-size: 16px; letter-spacing: -0.02em; }
+  .bar nav { display: flex; gap: 26px; font-size: 14px; color: #5c6a5f; }
+  .phone { font-weight: 600; font-size: 15px; }
+  .hero { padding: 58px 0 46px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 44px; align-items: center; }
+  .kicker { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #1f4d3a; margin-bottom: 16px; }
+  h1 { font-family: "Unbounded", sans-serif; font-size: 52px; line-height: 1.04; letter-spacing: -0.04em; font-weight: 600; }
+  .lead { margin-top: 18px; font-size: 16.5px; line-height: 1.55; color: #4d5b51; max-width: 44ch; }
+  .row { margin-top: 28px; display: flex; align-items: center; gap: 18px; }
+  .btn { background: #1f4d3a; color: #f4ede1; padding: 16px 26px; border-radius: 6px; font-size: 14px; font-weight: 600; }
+  .price { font-family: "Unbounded", sans-serif; font-size: 22px; }
+  .price small { display: block; font-family: "Onest", sans-serif; font-size: 12px; color: #6b7a6f; font-weight: 400; margin-top: 4px; }
+  .cup { border-radius: 16px; background: linear-gradient(160deg, #e8dcc8, #b79775 75%); aspect-ratio: 4/3; position: relative; overflow: hidden; }
+  .cup::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: 14%; height: 26%; background: rgba(31,77,58,.18); border-radius: 50%; filter: blur(10px); }
+  .strip { border-top: 1px solid #ddd0bd; padding: 34px 0 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .item h3 { font-family: "Unbounded", sans-serif; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .item p { margin-top: 8px; font-size: 13.5px; line-height: 1.5; color: #5c6a5f; }
+  .num { font-family: "Unbounded", sans-serif; font-size: 13px; color: #1f4d3a; margin-bottom: 10px; }
+  footer { border-top: 1px solid #ddd0bd; padding: 22px 0 34px; font-size: 13px; color: #6b7a6f; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap bar">
+      <div class="brand">кофейня «Тёплый»</div>
+      <nav><span>Меню</span><span>Выезд</span><span>Отзывы</span><span>Контакты</span></nav>
+      <div class="phone">+7 913 000-00-00</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="kicker">Кофе на выезд · Новосибирск</div>
+        <h1>Кофейня<br />приезжает<br />к вам сама</h1>
+        <p class="lead">Свадьба, съёмка, офис или день рождения — привозим стойку, бариста и кофе. Час работы, сто чашек, уборка за нами.</p>
+        <div class="row">
+          <span class="btn">Узнать свободные даты</span>
+          <span class="price">от 18 000 ₽<small>за 3 часа, всё включено</small></span>
+        </div>
+      </div>
+      <div class="cup"></div>
+    </div>
+
+    <div class="strip">
+      <div class="item">
+        <div class="num">01</div>
+        <h3>Приезжаем за час</h3>
+        <p>Стойка, оборудование, вода, электричество — наше. Нужна только площадка два на два метра.</p>
+      </div>
+      <div class="item">
+        <div class="num">02</div>
+        <h3>Сто чашек в час</h3>
+        <p>Два бариста на потоке, меню под событие: от эспрессо до рафов и какао для детей.</p>
+      </div>
+      <div class="item">
+        <div class="num">03</div>
+        <h3>Без следов</h3>
+        <p>Убираем за собой: посуда, мусор, кофейный жмых. Площадка после нас чище, чем была.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap" style="display:flex;justify-content:space-between;width:100%">
+      <span>ул. Кирова, 12 · ежедневно 08:00–22:00</span>
+      <span>даты на месяц вперёд открыты</span>
+    </div>
+  </footer>
+</body>
+</html>

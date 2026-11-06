@@ -8,7 +8,7 @@ import { config, asset } from "../config";
       <div>
         <p class="mono text-lime">05 — как это выглядит</p>
         <h2 class="mt-4 max-w-[24ch] text-[clamp(28px,4.2vw,46px)] font-semibold leading-[1.05] tracking-[-0.03em]">
-          Один живой сайт и два демо-примера
+          Один живой сайт и три демо-примера
         </h2>
       </div>
       <p class="max-w-[34ch] text-[15px] leading-relaxed text-paper/60">
@@ -53,7 +53,7 @@ import { config, asset } from "../config";
     </article>
 
     <!-- демо-примеры -->
-    <div class="mt-6 grid gap-px bg-paper/15 md:grid-cols-2">
+    <div class="mt-6 grid gap-px bg-paper/15 md:grid-cols-2 lg:grid-cols-3">
       <article class="bg-dark">
         <a href={asset("demo/manicure.html")} target="_blank" rel="noopener" class="block overflow-hidden bg-paper">
           <img
@@ -88,6 +88,25 @@ import { config, asset } from "../config";
           <p class="mt-3 max-w-[46ch] text-[14px] leading-relaxed text-paper/70">
             Как выглядит каталог: услуги с ценами и сроками, всё видно сразу.
             Так же будет с вашими позициями и вашими ценами.
+          </p>
+        </div>
+      </article>
+
+      <article class="bg-dark">
+        <a href={asset("demo/coffee.html")} target="_blank" rel="noopener" class="block overflow-hidden bg-paper">
+          <img
+            src={asset("demo-landing.png")}
+            alt="Демо-лендинг кофейни на выезд: заголовок, цена и три преимущества"
+            class="h-[260px] w-full object-cover object-top transition-transform duration-500 hover:scale-[1.015] md:h-[300px]"
+            loading="lazy"
+          />
+        </a>
+        <div class="p-6">
+          <p class="mono text-lime">Демо-пример</p>
+          <h3 class="mt-3 font-display text-[18px] font-semibold tracking-[-0.02em]">Лендинг кофейни на выезд</h3>
+          <p class="mt-3 max-w-[46ch] text-[14px] leading-relaxed text-paper/70">
+            Лендинг под одну услугу: сразу цена, три причины сказать «да» и кнопка.
+            Так выглядит страница, когда продавать нужно одно.
           </p>
         </div>
       </article>
