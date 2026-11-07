@@ -10,7 +10,7 @@ import sitemap from "@astrojs/sitemap";
  *
  * Без переменных собирается обычная корневая версия.
  */
-const site = process.env.SITE_URL || "https://example.com";
+const site = process.env.SITE_URL || "https://blackojack.github.io/sajty";
 const base = process.env.BASE_PATH || "/";
 
 export default defineConfig({

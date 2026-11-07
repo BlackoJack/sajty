@@ -18,7 +18,7 @@ export const config = {
   city: "Новосибирск",
 
   // TODO: домен после покупки (и в astro.config.mjs тоже)
-  siteUrl: "https://example.com",
+  siteUrl: "https://blackojack.github.io/sajty",
 
   contacts: {
     // TODO: проверьте ссылку — сейчас взята из резюме
@@ -38,7 +38,7 @@ export const config = {
   // Ссылка на рабочий пример — первый проект в портфолио
   example: {
     label: "sайт инженера-визитка",
-    url: "http://localhost:4321",
+    url: "https://blackojack.github.io",
   },
 
   formAction: "/api/lead",
