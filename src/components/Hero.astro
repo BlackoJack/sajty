@@ -16,14 +16,14 @@ const demos = {
     </p>
 
     <h1 class="mt-7 text-[clamp(34px,6vw,84px)] font-semibold leading-[0.96] tracking-[-0.04em]">
-      Сайт, который<span class="hidden md:inline"><br /></span> не стыдно отправить
+      Сайт вместо переписки
     </h1>
 
     <div class="mt-12 grid gap-12 lg:grid-cols-12 lg:gap-10">
       <div class="lg:col-span-7">
-        <p class="max-w-[52ch] text-[17px] leading-relaxed text-ink/80 md:text-[18px]">
-          Визитка, каталог или лендинг для небольшого дела: мастерской, салона, автосервиса, репетитора.
-          Без конструкторов и ежемесячной платы — сайт остаётся вашим.
+        <p class="max-w-[54ch] text-[17px] leading-relaxed text-ink/80 md:text-[18px]">
+          Цены, работы, запись и адрес — на одной странице. Вместо двадцати сообщений в личке одна ссылка.
+          Визитка, каталог или лендинг за 2–3 дня, без конструктора и ежемесячной платы.
         </p>
 
         <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -33,6 +33,13 @@ const demos = {
           </a>
           <a href="#calc" class="btn btn-ghost">Сколько стоит</a>
         </div>
+
+        <p class="mt-4 text-[13.5px] text-muted">
+          или сразу в{" "}
+          <a href={config.contacts.whatsapp.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">WhatsApp</a>{" "}
+          и{" "}
+          <a href={config.contacts.max.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">Max</a>
+        </p>
 
         <p class="mono mt-7 text-muted">Первый разговор — 15 минут, бесплатно</p>
 

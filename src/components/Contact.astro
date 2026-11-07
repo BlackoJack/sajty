@@ -29,6 +29,30 @@ import { config } from "../config";
             </span>
           </a>
           <a
+            href={config.contacts.whatsapp.url}
+            target="_blank"
+            rel="noopener"
+            class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
+          >
+            <span class="mono text-muted">WhatsApp</span>
+            <span class="flex items-center gap-3 text-[16px]">
+              {config.contacts.whatsapp.label}
+              <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
+            </span>
+          </a>
+          <a
+            href={config.contacts.max.url}
+            target="_blank"
+            rel="noopener"
+            class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
+          >
+            <span class="mono text-muted">Max</span>
+            <span class="flex items-center gap-3 text-[16px]">
+              {config.contacts.max.label}
+              <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
+            </span>
+          </a>
+          <a
             href={config.contacts.email.url}
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >

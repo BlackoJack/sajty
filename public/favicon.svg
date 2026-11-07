@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="2" fill="#C6F24E"/>
-  <text x="16" y="22" font-family="ui-monospace, monospace" font-size="14" font-weight="700" text-anchor="middle" fill="#111214">ИР</text>
+  <rect x="6" y="10" width="13" height="12" rx="1.5" fill="none" stroke="#111214" stroke-width="2.8"/>
+  <path d="M6 13.6h13" stroke="#111214" stroke-width="2.8"/>
+  <path d="M14 19.5 24 9.5" stroke="#111214" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M19.4 8.8h4.9v4.9" fill="none" stroke="#111214" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

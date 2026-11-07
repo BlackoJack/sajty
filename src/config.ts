@@ -6,9 +6,14 @@
  */
 
 export const config = {
+  // Бренд: слово в шапке и футере
+  brand: {
+    wordmark: "сайты",
+    tagline: "сайты для небольших дел",
+  },
+
   name: "Иван Раенко",
   shortName: "Иван",
-  initials: "ИР",
   role: "Сайты для небольших дел",
   city: "Новосибирск",
 
@@ -18,6 +23,14 @@ export const config = {
   contacts: {
     // TODO: проверьте ссылку — сейчас взята из резюме
     telegram: { label: "@devopsnsk", url: "https://t.me/devopsnsk" },
+    // TODO: проверьте ссылку Max — сейчас взята из резюме
+    max: {
+      label: "профиль",
+      short: "Max",
+      url: "https://max.ru/u/f9LHodD0cOJRMeqwry1H3VOwIUXQYiUHdfjxw4NfCPLSptlnNq9DlD3CL60",
+    },
+    // TODO: проверьте номер для WhatsApp (сейчас — номер из резюме)
+    whatsapp: { label: "+7 913 019-71-99", short: "WhatsApp", url: "https://wa.me/79130197199" },
     // TODO: проверьте почту
     email: { label: "devopsnskru@gmail.com", url: "mailto:devopsnskru@gmail.com" },
   },
@@ -44,9 +57,9 @@ export const config = {
   },
 
   meta: {
-    title: "Сайты для небольших дел — визитка, каталог, лендинг",
+    title: "Сайт вместо переписки — визитка, каталог, лендинг за 2–3 дня",
     description:
-      "Сделаю сайт для мастерской, салона, автосервиса или репетитора: визитка, каталог или лендинг за 2–3 дня. Без конструкторов и ежемесячной платы. Цена известна заранее.",
+      "Сделаю сайт, на который просто дают ссылку: цены, работы и запись на одной странице. Для мастерской, салона, автосервиса, репетитора. За 2–3 дня, без конструктора и абонплаты.",
     ogImage: "/og.png",
   },
 } as const;
