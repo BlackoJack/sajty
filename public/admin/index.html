@@ -65,7 +65,7 @@
   <body>
     <main>
       <h1>Админка</h1>
-      <p class="note">Цены, три позиции и заявки. Длинные тексты страницы здесь не правятся.</p>
+      <p class="note">Цены, три позиции, контакты на сайте и оповещение о заявке. Длинные тексты страницы здесь не правятся.</p>
 
       <form id="login">
         <label>Пароль
@@ -80,8 +80,20 @@
           <h2>Цены, ₽</h2>
           <div class="grid prices" id="prices"></div>
           <div id="packages"></div>
+          <h2>Контакты на сайте</h2>
+          <p class="note">Эти ссылки видят посетители. Токен бота сюда не входит.</p>
+          <div id="contacts"></div>
+          <h2>Оповещение о заявке</h2>
+          <p class="note">
+            Telegram из облака часто не открывается, поэтому заявка дополнительно уходит письмом.
+            Для Gmail нужен пароль приложения: аккаунт Google → безопасность → пароли приложений.
+            Сервер smtp.gmail.com, порт 465. Для Яндекс Почты сервер smtp.yandex.ru, тот же порт.
+            Пустой токен, chat id или пароль не стирают уже сохранённые.
+          </p>
+          <div id="notify"></div>
           <div class="row">
             <button type="submit">Сохранить на сайт</button>
+            <button type="button" id="test-mail" class="ghost">Проверить почту</button>
             <a class="link" href="/">Открыть сайт</a>
           </div>
           <p id="save-status" class="status" role="status"></p>
@@ -107,6 +119,8 @@
       const contentForm = document.getElementById("content-form");
       const pricesBox = document.getElementById("prices");
       const packagesBox = document.getElementById("packages");
+      const contactsBox = document.getElementById("contacts");
+      const notifyBox = document.getElementById("notify");
       const leadsBox = document.getElementById("leads");
       const loginStatus = document.getElementById("login-status");
       const saveStatus = document.getElementById("save-status");
@@ -125,32 +139,50 @@
         return data;
       }
 
-      function field(name, label, value, multiline) {
+      function field(name, label, value, options) {
+        const settings = options || {};
         const wrap = document.createElement("label");
         wrap.textContent = label;
-        const input = document.createElement(multiline ? "textarea" : "input");
-        if (!multiline) input.type = name.startsWith("price.") ? "number" : "text";
+        const input = document.createElement(settings.multiline ? "textarea" : "input");
+        if (!settings.multiline) input.type = settings.type || (name.startsWith("price.") ? "number" : "text");
         input.name = name;
         input.value = value ?? "";
         if (input.type === "number") input.min = "0";
-        input.required = true;
+        if (settings.placeholder) input.placeholder = settings.placeholder;
+        if (settings.autocomplete) input.autocomplete = settings.autocomplete;
+        input.required = settings.required !== false;
         wrap.append(input);
         return wrap;
       }
 
-      function fill(content) {
+      function fill(content, notify) {
+        const alerts = notify || {};
         pricesBox.replaceChildren();
         packagesBox.replaceChildren();
+        contactsBox.replaceChildren();
+        notifyBox.replaceChildren();
         for (const [id, label] of priceFields) pricesBox.append(field("price." + id, label, content.price[id]));
         content.packages.forEach((pkg, index) => {
           const title = document.createElement("h2");
           title.textContent = pkg.name || "Позиция " + (index + 1);
           packagesBox.append(title);
           packagesBox.append(field("pkg." + index + ".name", "Название", pkg.name));
-          packagesBox.append(field("pkg." + index + ".tagline", "Короткий текст", pkg.tagline, true));
-          packagesBox.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, true));
-          packagesBox.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), true));
+          packagesBox.append(field("pkg." + index + ".tagline", "Короткий текст", pkg.tagline, { multiline: true }));
+          packagesBox.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, { multiline: true }));
+          packagesBox.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), { multiline: true }));
         });
+        const contacts = content.contacts || {};
+        contactsBox.append(field("contact.telegram", "Telegram", contacts.telegram?.label || "", { placeholder: "@devopsnsk или ссылка t.me" }));
+        contactsBox.append(field("contact.whatsapp", "WhatsApp", contacts.whatsapp?.label || "", { placeholder: "+7 913 000-00-00" }));
+        contactsBox.append(field("contact.email", "Почта", contacts.email?.label || "", { placeholder: "name@gmail.com" }));
+        contactsBox.append(field("contact.maxLabel", "Max, подпись", contacts.max?.label || "", { placeholder: "профиль" }));
+        contactsBox.append(field("contact.maxUrl", "Max, ссылка", contacts.max?.url || "", { placeholder: "https://max.ru/..." }));
+        notifyBox.append(field("notify.telegramToken", "Токен бота", alerts.telegramToken || "", { type: "password", required: false, autocomplete: "new-password" }));
+        notifyBox.append(field("notify.telegramChatId", "Chat id", alerts.telegramChatId || "", { required: false, placeholder: "-100..." }));
+        notifyBox.append(field("notify.mailTo", "Куда слать заявки", alerts.mailTo || "", { required: false, placeholder: "name@gmail.com" }));
+        notifyBox.append(field("notify.smtpHost", "Сервер почты", alerts.smtpHost || "smtp.gmail.com", { required: false }));
+        notifyBox.append(field("notify.smtpUser", "Логин почты", alerts.smtpUser || "", { required: false, placeholder: "name@gmail.com" }));
+        notifyBox.append(field("notify.smtpPassword", "Пароль приложения", alerts.smtpPassword || "", { type: "password", required: false, autocomplete: "new-password" }));
       }
 
       function collect() {
@@ -167,7 +199,28 @@
             .map((line) => line.trim())
             .filter(Boolean),
         }));
-        return { price, packages };
+        return {
+          price,
+          packages,
+          contacts: {
+            telegram: String(data.get("contact.telegram") || ""),
+            whatsapp: String(data.get("contact.whatsapp") || ""),
+            email: String(data.get("contact.email") || ""),
+            max: {
+              label: String(data.get("contact.maxLabel") || ""),
+              url: String(data.get("contact.maxUrl") || ""),
+            },
+          },
+          notify: {
+            telegramToken: String(data.get("notify.telegramToken") || ""),
+            telegramChatId: String(data.get("notify.telegramChatId") || ""),
+            mailTo: String(data.get("notify.mailTo") || ""),
+            smtpHost: String(data.get("notify.smtpHost") || ""),
+            smtpPort: 465,
+            smtpUser: String(data.get("notify.smtpUser") || ""),
+            smtpPassword: String(data.get("notify.smtpPassword") || ""),
+          },
+        };
       }
 
       function renderLeads(leads) {
@@ -222,14 +275,43 @@
               button.textContent = "Не удалилось";
             }
           });
-          article.append(title, when, contact, text, button);
+          if (lead.notified) {
+            const delivery = document.createElement("p");
+            delivery.className = "note";
+            const parts = [];
+            if (lead.mail) parts.push("Письмо отправлено");
+            else if (lead.mailConfigured) parts.push("Письмо не ушло");
+            else parts.push("Почта не настроена");
+            if (lead.telegram) parts.push("Telegram отправлен");
+            else if (lead.telegramConfigured) parts.push("Telegram не дошёл");
+            delivery.textContent = parts.join(" · ");
+            article.append(title, when, contact, delivery, text, button);
+          } else article.append(title, when, contact, text, button);
           leadsBox.append(article);
         }
       }
 
+      function mailMessage(result) {
+        if (result.ok) return "Письмо ушло. Если настройки ещё не сохраняли — нажмите «Сохранить на сайт».";
+        if (result.error === "smtp_no_password") {
+          const gmail = result.gmail ? "Gmail доступен" : "Gmail не отвечает";
+          const yandex = result.yandex ? "Яндекс доступен" : "Яндекс не отвечает";
+          return `Пароль приложения пустой. ${gmail}, ${yandex}. Впишите пароль и сохраните.`;
+        }
+        const known = {
+          smtp_535: "Почта отклонила пароль. Для Gmail нужен пароль приложения, не обычный пароль от ящика.",
+          smtp_534: "Почта отклонила пароль. Для Gmail нужен пароль приложения, не обычный пароль от ящика.",
+          smtp_timeout: "Почтовый сервер не ответил.",
+          smtp_config: "Проверьте адрес, логин и сервер.",
+          smtp_failed: "Письмо не ушло.",
+        };
+        return known[result.error] || "Письмо не ушло.";
+      }
+
       async function openDesk() {
         const content = await fetch("/api/content").then((response) => response.json());
-        fill(content);
+        const settings = await admin("settings");
+        fill(content, settings.notify || {});
         const listed = await admin("leads");
         renderLeads(listed.leads || []);
         loginForm.classList.add("hidden");
@@ -254,10 +336,21 @@
         event.preventDefault();
         saveStatus.textContent = "Сохраняю…";
         try {
-          await admin("save", { content: collect() });
+          const collected = collect();
+          await admin("save", { content: { price: collected.price, packages: collected.packages, contacts: collected.contacts }, notify: collected.notify });
           saveStatus.textContent = "Сохранено. На сайте обновится после перезагрузки страницы.";
         } catch {
-          saveStatus.textContent = "Не сохранилось. Проверьте поля: цены — целые числа, у позиции есть название, текст и хотя бы одна строка.";
+          saveStatus.textContent = "Не сохранилось. Проверьте цены, тексты позиций, контакты и почту. Порт только 465.";
+        }
+      });
+
+      document.getElementById("test-mail").addEventListener("click", async () => {
+        saveStatus.textContent = "Проверяю почту…";
+        try {
+          const result = await admin("test-mail", { notify: collect().notify });
+          saveStatus.textContent = mailMessage(result);
+        } catch {
+          saveStatus.textContent = "Проверка не выполнилась.";
         }
       });
 

@@ -1,7 +1,9 @@
 /**
  * Yandex Cloud Functions: заявка, публичный контент и админка.
  *
- * TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — попытка отправить заявку в Telegram.
+ * Публичный JSON: цены, три позиции, контакты на сайте.
+ * Закрытый JSON private/notify.json: токен бота, chat id, SMTP. В /api/content его нет.
+ * TELEGRAM_* в окружении — запас, пока админка ничего не сохранила.
  * LEADS_BUCKET, LEAD_ACCESS_KEY_ID, LEAD_SECRET_ACCESS_KEY — бакет заявок и контента.
  * ADMIN_PASSWORD — пароль страницы /admin. В ответ и в логи не попадает.
  */
@@ -9,17 +11,20 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const tls = require("tls");
 
 const DEFAULT_CONTENT = JSON.parse(fs.readFileSync(path.join(__dirname, "content.default.json"), "utf8"));
 const PACKAGE_IDS = ["visitka", "landing", "catalog"];
 const PRICE_KEYS = ["visitka", "landing", "catalog", "texts", "setup", "support"];
 const CONTENT_KEY = "content/site.json";
+const NOTIFY_KEY = "private/notify.json";
 
 const json = (statusCode, body) => ({
   statusCode,
   isBase64Encoded: false,
   headers: {
     "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, x-admin-password",
@@ -94,6 +99,87 @@ function cleanText(value, max) {
   return text;
 }
 
+function addressOf(value) {
+  const text = String(value ?? "").trim().toLowerCase().replace(/^mailto:/, "");
+  if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(text) || text.length > 120) return "";
+  return text;
+}
+
+function hostnameOf(value) {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)+$/.test(text)) return "";
+  return text;
+}
+
+function cleanContactUrl(value, protocol, hosts) {
+  const text = String(value ?? "").trim();
+  if (!text || text.length > 400 || /[\s<>]/.test(text)) return "";
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    return "";
+  }
+  if (url.protocol !== protocol || url.username || url.password) return "";
+  if (hosts && !hosts.includes(url.hostname.toLowerCase())) return "";
+  if (protocol === "mailto:") {
+    const address = addressOf(url.pathname);
+    return address ? `mailto:${address}` : "";
+  }
+  return url.toString();
+}
+
+function contactFromTelegram(value) {
+  const raw = String(value ?? "").trim();
+  let user = "";
+  if (raw.startsWith("@")) user = raw.slice(1);
+  else if (/^https?:\/\//i.test(raw)) {
+    try {
+      const url = new URL(raw);
+      if (url.hostname.toLowerCase() === "t.me" || url.hostname.toLowerCase() === "telegram.me") {
+        user = url.pathname.replace(/^\//, "").split("/")[0];
+      }
+    } catch {
+      user = "";
+    }
+  } else user = raw;
+  if (!/^[A-Za-z0-9_]{4,32}$/.test(user)) return null;
+  return { label: `@${user}`, url: `https://t.me/${user}` };
+}
+
+function contactFromPhone(value) {
+  const raw = String(value ?? "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 10 || digits.length > 15) return null;
+  const normalized = digits.length === 11 && digits.startsWith("8") ? `7${digits.slice(1)}` : digits;
+  const label = raw.length <= 40 ? raw : `+${normalized}`;
+  return { label, url: `https://wa.me/${normalized}` };
+}
+
+function contactFromEmail(value) {
+  const address = addressOf(value);
+  if (!address) return null;
+  return { label: address, url: `mailto:${address}` };
+}
+
+function contactFromMax(value) {
+  if (!value || typeof value !== "object") return null;
+  const label = cleanText(value.label, 40);
+  const url = cleanContactUrl(value.url, "https:", ["max.ru"]);
+  if (!label || !url) return null;
+  return { label, url };
+}
+
+function sanitizeContacts(input) {
+  if (!input || typeof input !== "object") return null;
+  const telegram = contactFromTelegram(typeof input.telegram === "string" ? input.telegram : input.telegram?.label || input.telegram?.url);
+  const whatsapp = contactFromPhone(typeof input.whatsapp === "string" ? input.whatsapp : input.whatsapp?.label || input.whatsapp?.url);
+  const email = contactFromEmail(typeof input.email === "string" ? input.email : input.email?.label || input.email?.url);
+  const max = contactFromMax(input.max);
+  if (!telegram || !whatsapp || !email || !max) return null;
+  return { telegram, whatsapp, max, email };
+}
+
 function sanitizeContent(input) {
   if (!input || typeof input !== "object") return null;
   const price = {};
@@ -116,7 +202,32 @@ function sanitizeContent(input) {
     if (items.some((line) => !line)) return null;
     packages.push({ id, name, tagline, bestFor, items });
   }
-  return { price, packages };
+  const contacts = input.contacts == null ? sanitizeContacts(DEFAULT_CONTENT.contacts) : sanitizeContacts(input.contacts);
+  if (!contacts) return null;
+  return { price, packages, contacts };
+}
+
+function sanitizeNotify(input, previous) {
+  const prev = previous && typeof previous === "object" ? previous : {};
+  if (!input || typeof input !== "object") return null;
+  const tokenRaw = String(input.telegramToken ?? "").trim();
+  const chatRaw = String(input.telegramChatId ?? "").trim();
+  const telegramToken = tokenRaw || String(prev.telegramToken ?? "").trim();
+  const telegramChatId = chatRaw || String(prev.telegramChatId ?? "").trim();
+  if (telegramToken && !/^\d{6,}:[A-Za-z0-9_-]{20,}$/.test(telegramToken)) return null;
+  if (telegramChatId && !/^-?\d{1,20}$/.test(telegramChatId)) return null;
+  if (input.mailTo && !addressOf(input.mailTo)) return null;
+  if (input.smtpUser && !addressOf(input.smtpUser)) return null;
+  if (input.smtpHost && !hostnameOf(input.smtpHost)) return null;
+  const requestedPort = input.smtpPort == null || input.smtpPort === "" ? 465 : Number(input.smtpPort);
+  if (requestedPort !== 465) return null;
+  const smtpPassword = String(input.smtpPassword ?? "") || String(prev.smtpPassword ?? "");
+  if (smtpPassword.length > 200 || /[\r\n]/.test(smtpPassword)) return null;
+  const mailTo = addressOf(input.mailTo) || addressOf(prev.mailTo);
+  const smtpUser = addressOf(input.smtpUser) || addressOf(prev.smtpUser);
+  const smtpHost = hostnameOf(input.smtpHost) || hostnameOf(prev.smtpHost) || "smtp.gmail.com";
+  if (smtpPassword && (!smtpUser || !mailTo)) return null;
+  return { telegramToken, telegramChatId, mailTo, smtpHost, smtpPort: 465, smtpUser, smtpPassword };
 }
 
 async function s3(method, objectKey, { query = null, body = "", contentType = "" } = {}) {
@@ -182,6 +293,214 @@ async function writeContent(content) {
   return result.ok;
 }
 
+async function readNotify() {
+  const stored = await s3("GET", NOTIFY_KEY);
+  let saved = {};
+  if (stored.ok) {
+    try {
+      const parsed = JSON.parse(stored.text);
+      if (parsed && typeof parsed === "object") saved = parsed;
+    } catch {
+      saved = {};
+    }
+  }
+  const fallbackMail = addressOf(DEFAULT_CONTENT.contacts?.email?.label);
+  const draft = {
+    telegramToken: saved.telegramToken || process.env.TELEGRAM_BOT_TOKEN || "",
+    telegramChatId: saved.telegramChatId || process.env.TELEGRAM_CHAT_ID || "",
+    mailTo: saved.mailTo || fallbackMail,
+    smtpHost: saved.smtpHost || "smtp.gmail.com",
+    smtpPort: 465,
+    smtpUser: saved.smtpUser || fallbackMail,
+    smtpPassword: saved.smtpPassword || "",
+  };
+  return (
+    sanitizeNotify(draft, {}) ||
+    sanitizeNotify({ ...draft, telegramToken: "", telegramChatId: "" }, {}) || {
+      telegramToken: "",
+      telegramChatId: "",
+      mailTo: fallbackMail,
+      smtpHost: "smtp.gmail.com",
+      smtpPort: 465,
+      smtpUser: fallbackMail,
+      smtpPassword: "",
+    }
+  );
+}
+
+async function writeNotify(notify) {
+  const result = await s3("PUT", NOTIFY_KEY, {
+    body: JSON.stringify(notify),
+    contentType: "application/json",
+  });
+  return result.ok;
+}
+
+function createSession(socket) {
+  let buffer = "";
+  const queue = [];
+  let pending = null;
+  const push = (line) => {
+    if (pending) {
+      const resolve = pending;
+      pending = null;
+      resolve(line);
+    } else queue.push(line);
+  };
+  socket.on("data", (chunk) => {
+    buffer += chunk.toString("utf8");
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const raw of lines) {
+      const line = raw.replace(/\r$/, "");
+      if (line.length >= 4 && line[3] === " ") push(line);
+    }
+  });
+  return {
+    socket,
+    read() {
+      if (queue.length) return Promise.resolve(queue.shift());
+      return new Promise((resolve) => {
+        pending = resolve;
+      });
+    },
+    write(line) {
+      socket.write(`${line}\r\n`);
+    },
+  };
+}
+
+function openSmtp(host, port) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const socket = tls.connect({ host, port, servername: host });
+    const session = createSession(socket);
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      reject(new Error("smtp_timeout"));
+    }, 8000);
+    socket.once("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
+    socket.once("secureConnect", () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(session);
+    });
+  });
+}
+
+function expectCode(session, codes) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("smtp_timeout")), 8000);
+    session.read().then(
+      (line) => {
+        clearTimeout(timer);
+        const code = Number(String(line).slice(0, 3));
+        if (!codes.includes(code)) reject(new Error(`smtp_${code}`));
+        else resolve(code);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function encodeSubject(subject) {
+  const clean = String(subject).replace(/[\r\n]+/g, " ").trim().slice(0, 180);
+  return `=?UTF-8?B?${Buffer.from(clean, "utf8").toString("base64")}?=`;
+}
+
+async function smtpReachable(host, port) {
+  let session;
+  try {
+    session = await openSmtp(host, port);
+    await expectCode(session, [220]);
+    session.write("QUIT");
+    return true;
+  } catch {
+    return false;
+  } finally {
+    session?.socket.destroy();
+  }
+}
+
+async function sendSmtp({ host, port, user, password, to, subject, text }) {
+  const from = addressOf(user);
+  const recipient = addressOf(to);
+  if (!from || !recipient || !hostnameOf(host) || !password) throw new Error("smtp_config");
+  const stuffed = String(text)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => (line.startsWith(".") ? `.${line}` : line))
+    .join("\r\n");
+  const payload = [
+    `From: ${from}`,
+    `To: ${recipient}`,
+    `Subject: ${encodeSubject(subject)}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=utf-8",
+    "",
+    stuffed,
+    ".",
+  ].join("\r\n");
+  const session = await openSmtp(host, port || 465);
+  try {
+    await expectCode(session, [220]);
+    session.write("EHLO sajty");
+    await expectCode(session, [250]);
+    session.write("AUTH LOGIN");
+    await expectCode(session, [334]);
+    session.write(Buffer.from(from).toString("base64"));
+    await expectCode(session, [334]);
+    session.write(Buffer.from(String(password)).toString("base64"));
+    await expectCode(session, [235]);
+    session.write(`MAIL FROM:<${from}>`);
+    await expectCode(session, [250]);
+    session.write(`RCPT TO:<${recipient}>`);
+    await expectCode(session, [250, 251]);
+    session.write("DATA");
+    await expectCode(session, [354]);
+    session.socket.write(`${payload}\r\n`);
+    await expectCode(session, [250]);
+    session.write("QUIT");
+    await expectCode(session, [221]);
+  } finally {
+    session.socket.destroy();
+  }
+}
+
+function smtpErrorCode(error) {
+  const message = String(error?.message || "");
+  if (/^smtp_\d{3}$/.test(message) || message === "smtp_timeout" || message === "smtp_config") return message;
+  return "smtp_failed";
+}
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(false);
+      },
+    );
+  });
+}
+
 function listKeys(xml) {
   const keys = [];
   const pattern = /<Key>([^<]+)<\/Key>/g;
@@ -214,6 +533,11 @@ async function listLeads() {
           contact: String(data.contact ?? "").trim().slice(0, 120),
           task: String(data.task ?? "").replace(/\r\n/g, "\n").trim().slice(0, 2000),
           at: String(data.at ?? "").trim().slice(0, 40),
+          notified: typeof data.mailConfigured === "boolean",
+          mail: data.mail === true,
+          telegram: data.telegram === true,
+          mailConfigured: data.mailConfigured === true,
+          telegramConfigured: data.telegramConfigured === true,
         };
       } catch {
         return null;
@@ -223,13 +547,47 @@ async function listLeads() {
   return rows.filter(Boolean).sort((a, b) => (a.at < b.at ? 1 : -1));
 }
 
-async function saveLead(name, contact, task) {
-  const objectKey = `leads/${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+async function putLead(objectKey, record) {
   const result = await s3("PUT", objectKey, {
-    body: JSON.stringify({ name, contact, task, at: new Date().toISOString() }),
+    body: JSON.stringify(record),
     contentType: "application/json",
   });
   return result.ok;
+}
+
+function leadMessage(name, contact, task) {
+  return ["Новая заявка с сайта", "", `Имя: ${name}`, `Связь: ${contact}`, "", task].join("\n");
+}
+
+async function deliverLead(name, contact, task) {
+  const notify = await readNotify();
+  const text = leadMessage(name, contact, task);
+  const mailConfigured = Boolean(notify?.smtpPassword && notify.smtpUser && notify.mailTo);
+  const telegramConfigured = Boolean(notify?.telegramToken && notify.telegramChatId);
+  const mail = mailConfigured
+    ? withTimeout(
+        sendSmtp({
+          host: notify.smtpHost,
+          port: 465,
+          user: notify.smtpUser,
+          password: notify.smtpPassword,
+          to: notify.mailTo,
+          subject: `Заявка с сайта: ${name}`,
+          text,
+        }).then(() => true),
+        9000,
+      )
+    : Promise.resolve(false);
+  const telegram = telegramConfigured
+    ? withTimeout(sendTelegram(notify.telegramToken, notify.telegramChatId, text), 4000)
+    : Promise.resolve(false);
+  const [mailOk, telegramOk] = await Promise.all([mail, telegram]);
+  return {
+    mail: mailOk === true,
+    telegram: telegramOk === true,
+    mailConfigured,
+    telegramConfigured,
+  };
 }
 
 async function sendTelegram(token, chatId, text) {
@@ -262,12 +620,43 @@ async function handleAdmin(event, method) {
 
   if (action === "login") return json(200, { ok: true });
 
+  if (action === "settings") {
+    const notify = await readNotify();
+    if (!notify) return json(502, { ok: false, error: "notify_unavailable" });
+    return json(200, { ok: true, notify });
+  }
+
   if (action === "save") {
     const content = sanitizeContent(body.content);
-    if (!content) return json(422, { ok: false, error: "validation" });
+    const notify = sanitizeNotify(body.notify, await readNotify());
+    if (!content || !notify) return json(422, { ok: false, error: "validation" });
+    const notifySaved = await writeNotify(notify);
     const saved = await writeContent(content);
-    if (!saved) return json(502, { ok: false, error: "save_failed" });
+    if (!saved || !notifySaved) return json(502, { ok: false, error: "save_failed" });
     return json(200, { ok: true });
+  }
+
+  if (action === "test-mail") {
+    const notify = sanitizeNotify(body.notify || {}, await readNotify());
+    if (!notify) return json(422, { ok: false, error: "validation" });
+    if (!notify.smtpPassword || !notify.smtpUser || !notify.mailTo) {
+      const [gmail, yandexMail] = await Promise.all([smtpReachable("smtp.gmail.com", 465), smtpReachable("smtp.yandex.ru", 465)]);
+      return json(200, { ok: false, error: "smtp_no_password", gmail, yandex: yandexMail });
+    }
+    try {
+      await sendSmtp({
+        host: notify.smtpHost,
+        port: 465,
+        user: notify.smtpUser,
+        password: notify.smtpPassword,
+        to: notify.mailTo,
+        subject: "Проверка почты с сайта",
+        text: "Если это письмо пришло, заявки с сайта будут приходить сюда.",
+      });
+      return json(200, { ok: true });
+    } catch (error) {
+      return json(200, { ok: false, error: smtpErrorCode(error) });
+    }
   }
 
   if (action === "leads") {
@@ -290,10 +679,6 @@ async function handleLead(event, method) {
   if (method === "OPTIONS") return empty(204);
   if (method !== "POST") return json(405, { ok: false, error: "method_not_allowed" });
 
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return json(503, { ok: false, error: "not_configured" });
-
   const body = readPayload(event);
   if (body.error === "bad_json") return json(400, { ok: false, error: "bad_json" });
   if (typeof body.company === "string" && body.company.trim() !== "") return json(200, { ok: true });
@@ -303,22 +688,28 @@ async function handleLead(event, method) {
   const task = String(body.task ?? "").trim().slice(0, 2000);
   if (name.length < 2 || contact.length < 5 || task.length < 10) return json(422, { ok: false, error: "validation" });
 
+  const objectKey = `leads/${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+  const record = { name, contact, task, at: new Date().toISOString() };
   let saved = false;
   try {
-    saved = await saveLead(name, contact, task);
+    saved = await putLead(objectKey, record);
   } catch {
     saved = false;
   }
+  if (!saved) return json(502, { ok: false, error: "save_failed" });
 
-  let sent = false;
+  let delivery = { mail: false, telegram: false, mailConfigured: false, telegramConfigured: false };
   try {
-    sent = await sendTelegram(token, chatId, ["Новая заявка с сайта", "", `Имя: ${name}`, `Связь: ${contact}`, "", task].join("\n"));
+    delivery = await deliverLead(name, contact, task);
   } catch {
-    sent = false;
+    delivery = { mail: false, telegram: false, mailConfigured: false, telegramConfigured: false };
   }
-
-  if (saved || sent) return json(200, { ok: true });
-  return json(502, { ok: false, error: "telegram_failed" });
+  try {
+    await putLead(objectKey, { ...record, ...delivery });
+  } catch {
+    /* заявка уже лежит, отметка о письме не обязательна */
+  }
+  return json(200, { ok: true });
 }
 
 module.exports.handler = async function handler(event) {
@@ -330,5 +721,9 @@ module.exports.handler = async function handler(event) {
 };
 
 module.exports.sanitizeContent = sanitizeContent;
+module.exports.sanitizeContacts = sanitizeContacts;
+module.exports.sanitizeNotify = sanitizeNotify;
+module.exports.smtpReachable = smtpReachable;
+module.exports.sendSmtp = sendSmtp;
 module.exports.passwordOk = passwordOk;
 module.exports.leadKeyOk = leadKeyOk;

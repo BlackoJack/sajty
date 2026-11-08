@@ -42,10 +42,6 @@ read_env() {
 
 token="$(read_env TELEGRAM_BOT_TOKEN)"
 chat_id="$(read_env TELEGRAM_CHAT_ID)"
-if [[ -z "$token" || -z "$chat_id" ]]; then
-  echo "В .env пустые TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID."
-  exit 1
-fi
 
 admin_password="$(read_env ADMIN_PASSWORD)"
 if [[ -z "$admin_password" ]]; then
@@ -141,7 +137,7 @@ yc serverless function version create \
   --runtime nodejs22 \
   --entrypoint index.handler \
   --memory 128m \
-  --execution-timeout 10s \
+  --execution-timeout 20s \
   --source-path "$root/yandex/lead" \
   --service-account-id "$sa_id" \
   --environment "TELEGRAM_BOT_TOKEN=${token}" \

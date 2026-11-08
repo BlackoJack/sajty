@@ -27,7 +27,7 @@ const demos = {
         </p>
 
         <div class="mt-8 flex flex-wrap items-center gap-3">
-          <a href={config.contacts.telegram.url} class="btn btn-lime" target="_blank" rel="noopener">
+          <a data-contact="telegram" href={config.contacts.telegram.url} class="btn btn-lime" target="_blank" rel="noopener">
             Написать в Telegram
             <span aria-hidden="true">→</span>
           </a>
@@ -36,9 +36,9 @@ const demos = {
 
         <p class="mt-4 text-[13.5px] text-muted">
           или сразу в{" "}
-          <a href={config.contacts.whatsapp.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">WhatsApp</a>{" "}
+          <a data-contact="whatsapp" href={config.contacts.whatsapp.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">WhatsApp</a>{" "}
           и{" "}
-          <a href={config.contacts.max.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">Max</a>
+          <a data-contact="max" href={config.contacts.max.url} class="underline decoration-ink/25 underline-offset-4 transition-colors hover:text-ink" target="_blank" rel="noopener">Max</a>
         </p>
 
         <p class="mono mt-7 text-muted">Первый разговор — 15 минут, бесплатно</p>

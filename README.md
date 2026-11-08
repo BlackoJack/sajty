@@ -51,7 +51,7 @@ npm run build    # статика в dist/
 - Cloudflare Pages — `functions/api/lead.ts`
 - Yandex Cloud — `yandex/lead/index.js`, выкладка `npm run deploy:yandex`
 
-Нужны `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` в `.env` (для скрипта Яндекса) или в переменных Cloudflare. Пока их нет — форма предлагает написать в Telegram с уже собранным текстом. Если обработчик жив, а до Telegram запрос не дошёл, текст тот же, но с другой формулировкой.
+Заявка пишется в закрытый бакет. Письмо уходит по SMTP, который задаётся на `/admin` (для Gmail — пароль приложения, сервер `smtp.gmail.com`, порт 465). Токен бота и chat id тоже правятся там и на сайт не отдаются. Telegram из облака Яндекса по-прежнему может не открыться: заявка всё равно сохраняется, а в админке видно, ушло ли письмо.
 
 ## Публикация
 
@@ -79,10 +79,11 @@ npm run build    # статика в dist/
 3. Дальше пуш в `main` или `master` запускает `.github/workflows/deploy.yml`. Один шаг публикует
    статику на GitHub Pages, второй выкладывает сайт и функцию заявки в Яндекс. Адрес Pages workflow
    берёт из `configure-pages`, поэтому `SITE_URL` и `BASE_PATH` руками заполнять не нужно.
-4. Для Яндекса в секретах репозитория нужны `YC_SA_JSON`, `YC_FOLDER_ID`, `YC_LEAD_KEY`,
-   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` и `ADMIN_PASSWORD`. Их записывает
-   `bash scripts/github-secrets.sh` после `gh auth login`. Без секретов Pages всё равно выйдет,
-   а шаг Яндекса остановится с именем недостающего секрета.
+4. Для Яндекса в секретах репозитория нужны `YC_SA_JSON`, `YC_FOLDER_ID`, `YC_LEAD_KEY`
+   и `ADMIN_PASSWORD`. `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` необязательны: после первого
+   сохранения их хранит админка. Секреты записывает `bash scripts/github-secrets.sh` после
+   `gh auth login`. Без обязательных секретов Pages всё равно выйдет, а шаг Яндекса остановится
+   с именем недостающего секрета.
 5. Сайт на GitHub будет на `https://USER.github.io/REPO/`. Рабочая форма и админка живут на адресе Яндекса.
 
 ### GitLab Pages

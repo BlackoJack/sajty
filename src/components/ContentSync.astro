@@ -8,10 +8,45 @@
     });
   }
 
+  const contactRules: Record<string, { protocol: string; hosts?: string[] }> = {
+    telegram: { protocol: "https:", hosts: ["t.me", "telegram.me"] },
+    whatsapp: { protocol: "https:", hosts: ["wa.me", "api.whatsapp.com"] },
+    max: { protocol: "https:", hosts: ["max.ru"] },
+    email: { protocol: "mailto:" },
+  };
+
+  function contactHref(id: string, value: string) {
+    try {
+      const url = new URL(value);
+      const rule = contactRules[id];
+      if (!rule || url.protocol !== rule.protocol) return "";
+      if (rule.hosts && !rule.hosts.includes(url.hostname.toLowerCase())) return "";
+      return url.toString();
+    } catch {
+      return "";
+    }
+  }
+
+  function applyContacts(contacts?: Record<string, { label?: string; url?: string }>) {
+    if (!contacts) return;
+    for (const id of Object.keys(contactRules)) {
+      const item = contacts[id];
+      if (!item) continue;
+      const href = item.url ? contactHref(id, item.url) : "";
+      document.querySelectorAll<HTMLAnchorElement>(`[data-contact="${id}"]`).forEach((node) => {
+        if (href) node.href = href;
+        const label = node.querySelector("[data-contact-label]");
+        if (label && item.label) label.textContent = item.label;
+      });
+    }
+  }
+
   function apply(content: {
     price?: Record<string, number>;
     packages?: { id: string; name: string; tagline: string; bestFor: string; items: string[] }[];
+    contacts?: Record<string, { label?: string; url?: string }>;
   }) {
+    applyContacts(content.contacts);
     const price = content.price ?? {};
     const visitka = document.querySelector("[data-price-slot='visitka']");
     if (visitka && Number.isFinite(price.visitka)) visitka.textContent = `от ${money(price.visitka)} ₽`;
@@ -73,7 +108,7 @@
     document.dispatchEvent(new Event("site-content"));
   }
 
-  fetch("/api/content")
+  fetch("/api/content", { cache: "no-store" })
     .then((response) => (response.ok ? response.json() : null))
     .then((content) => {
       if (content) apply(content);

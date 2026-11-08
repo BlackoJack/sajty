@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for name in YC_SA_JSON YC_FOLDER_ID YC_LEAD_KEY TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID ADMIN_PASSWORD; do
+          for name in YC_SA_JSON YC_FOLDER_ID YC_LEAD_KEY ADMIN_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "Нет секрета $name"
               missing=1

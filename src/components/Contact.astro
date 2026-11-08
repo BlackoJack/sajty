@@ -17,6 +17,7 @@ import { config } from "../config";
 
         <div class="mt-10 space-y-px border-y border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
           <a
+            data-contact="telegram"
             href={config.contacts.telegram.url}
             target="_blank"
             rel="noopener"
@@ -24,11 +25,12 @@ import { config } from "../config";
           >
             <span class="mono text-muted">Telegram</span>
             <span class="flex items-center gap-3 text-[16px]">
-              {config.contacts.telegram.label}
+              <span data-contact-label>{config.contacts.telegram.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
+            data-contact="whatsapp"
             href={config.contacts.whatsapp.url}
             target="_blank"
             rel="noopener"
@@ -36,11 +38,12 @@ import { config } from "../config";
           >
             <span class="mono text-muted">WhatsApp</span>
             <span class="flex items-center gap-3 text-[16px]">
-              {config.contacts.whatsapp.label}
+              <span data-contact-label>{config.contacts.whatsapp.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
+            data-contact="max"
             href={config.contacts.max.url}
             target="_blank"
             rel="noopener"
@@ -48,16 +51,17 @@ import { config } from "../config";
           >
             <span class="mono text-muted">Max</span>
             <span class="flex items-center gap-3 text-[16px]">
-              {config.contacts.max.label}
+              <span data-contact-label>{config.contacts.max.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
+            data-contact="email"
             href={config.contacts.email.url}
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
             <span class="mono text-muted">Почта</span>
-            <span class="text-[16px]">{config.contacts.email.label}</span>
+            <span class="text-[16px]" data-contact-label>{config.contacts.email.label}</span>
           </a>
         </div>
 
@@ -121,7 +125,7 @@ import { config } from "../config";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const status = document.getElementById("form-status");
-  const tg = config.contacts.telegram.url;
+  const fallbackTelegram = config.contacts.telegram.url;
 
   if (form && status) {
     form.addEventListener("submit", async (event) => {
@@ -160,11 +164,17 @@ import { config } from "../config";
         form.reset();
       } catch {
         const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
-        const link = `<a class="underline" href="${tg}?text=${text}" target="_blank" rel="noopener">Telegram</a>`;
-        status.innerHTML =
-          failedStatus === 502
-            ? `Сайт заявку принял, но Telegram сейчас не отвечает. Напишите напрямую: ${link} — текст уже собран.`
-            : `Форма на этом хостинге не подключена. Напишите напрямую: ${link} — текст уже собран.`;
+        const telegram = document.querySelector<HTMLAnchorElement>("[data-contact='telegram']");
+        const href = `${telegram?.href || fallbackTelegram}?text=${text}`;
+        status.replaceChildren();
+        status.append(failedStatus === 502 ? "Заявка не сохранилась. Напишите напрямую: " : "Форма на этом хостинге не подключена. Напишите напрямую: ");
+        const link = document.createElement("a");
+        link.className = "underline";
+        link.href = href;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "Telegram";
+        status.append(link, " — текст уже собран.");
       } finally {
         if (button) button.disabled = false;
       }
