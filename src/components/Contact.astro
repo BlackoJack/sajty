@@ -75,6 +75,19 @@ import { config } from "../config";
             </label>
 
             <label class="block">
+              <span class="mono text-muted">Как с вами связаться</span>
+              <input
+                class="field mt-2"
+                type="text"
+                name="contact"
+                autocomplete="tel"
+                maxlength="120"
+                placeholder="Телефон, @telegram или почта"
+                required
+              />
+            </label>
+
+            <label class="block">
               <span class="mono text-muted">Что за дело и что нужно</span>
               <textarea
                 class="field mt-2 min-h-[132px] resize-y"
@@ -115,13 +128,14 @@ import { config } from "../config";
       event.preventDefault();
       const data = new FormData(form);
       const name = String(data.get("name") ?? "").trim();
+      const contact = String(data.get("contact") ?? "").trim();
       const task = String(data.get("task") ?? "").trim();
       const honeypot = String(data.get("company") ?? "");
 
       if (honeypot) return;
 
-      if (name.length < 2 || task.length < 10) {
-        status.textContent = "Имя и пара слов о деле — так я пойму, о чём речь.";
+      if (name.length < 2 || contact.length < 5 || task.length < 10) {
+        status.textContent = "Имя, контакт и пара слов о деле — так я смогу ответить.";
         return;
       }
 
@@ -129,20 +143,28 @@ import { config } from "../config";
       const button = form.querySelector("button[type=submit]") as HTMLButtonElement | null;
       if (button) button.disabled = true;
 
+      let failedStatus = 0;
       try {
         const response = await fetch(form.action, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, task }),
+          body: JSON.stringify({ name, contact, task, company: honeypot }),
         });
 
-        if (!response.ok) throw new Error(String(response.status));
+        if (!response.ok) {
+          failedStatus = response.status;
+          throw new Error(String(response.status));
+        }
 
         status.textContent = "Отправлено. Ответлю в течение рабочего дня.";
         form.reset();
       } catch {
-        const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\n${task}`);
-        status.innerHTML = `Форма на этом хостинге не подключена. Напишите напрямую: <a class="underline" href="${tg}?text=${text}" target="_blank" rel="noopener">Telegram</a> — текст уже собран.`;
+        const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
+        const link = `<a class="underline" href="${tg}?text=${text}" target="_blank" rel="noopener">Telegram</a>`;
+        status.innerHTML =
+          failedStatus === 502
+            ? `Сайт заявку принял, но Telegram сейчас не отвечает. Напишите напрямую: ${link} — текст уже собран.`
+            : `Форма на этом хостинге не подключена. Напишите напрямую: ${link} — текст уже собран.`;
       } finally {
         if (button) button.disabled = false;
       }

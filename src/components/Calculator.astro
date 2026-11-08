@@ -172,5 +172,7 @@ const extras = [
     if (task && cta.dataset.message) task.value = cta.dataset.message;
   });
 
+  document.addEventListener("site-content", render);
   render();
+  if (document.documentElement.dataset.contentReady === "1") render();
 </script>

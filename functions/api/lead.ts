@@ -1,5 +1,6 @@
 /**
  * Cloudflare Pages Function: приём заявок с формы и отправка в Telegram.
+ * Тот же приём для Yandex Cloud — yandex/lead/index.js, выкладка: npm run deploy:yandex.
  * Работает только на Cloudflare Pages (или другом хостинге с поддержкой functions).
  *
  * Нужны переменные окружения (Settings → Environment variables):
@@ -17,6 +18,7 @@ type Env = {
 
 type Payload = {
   name?: unknown;
+  contact?: unknown;
   task?: unknown;
   company?: unknown;
 };
@@ -54,13 +56,14 @@ export async function onRequestPost({
   }
 
   const name = String(body.name ?? "").trim().slice(0, 100);
+  const contact = String(body.contact ?? "").trim().slice(0, 120);
   const task = String(body.task ?? "").trim().slice(0, 2000);
 
-  if (name.length < 2 || task.length < 10) {
+  if (name.length < 2 || contact.length < 5 || task.length < 10) {
     return json({ ok: false, error: "validation" }, 422);
   }
 
-  const text = [`Новая заявка с сайта`, ``, `Имя: ${name}`, ``, task].join("\n");
+  const text = [`Новая заявка с сайта`, ``, `Имя: ${name}`, `Связь: ${contact}`, ``, task].join("\n");
 
   const telegram = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",

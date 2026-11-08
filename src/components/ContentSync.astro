@@ -1,0 +1,84 @@
+<script>
+  const money = (value: number) => Number(value).toLocaleString("ru-RU").replace(/\u00A0/g, " ");
+
+  function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, (char) => {
+      const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+      return map[char];
+    });
+  }
+
+  function apply(content: {
+    price?: Record<string, number>;
+    packages?: { id: string; name: string; tagline: string; bestFor: string; items: string[] }[];
+  }) {
+    const price = content.price ?? {};
+    const visitka = document.querySelector("[data-price-slot='visitka']");
+    if (visitka && Number.isFinite(price.visitka)) visitka.textContent = `от ${money(price.visitka)} ₽`;
+
+    for (const pkg of content.packages ?? []) {
+      const priceValue = price[pkg.id];
+      const card = document.querySelector(`[data-package="${pkg.id}"]`);
+      if (card) {
+        const priceNode = card.querySelector("[data-package-price]");
+        const nameNode = card.querySelector("[data-package-name]");
+        const taglineNode = card.querySelector("[data-package-tagline]");
+        const bestNode = card.querySelector("[data-package-best]");
+        const itemsNode = card.querySelector("[data-package-items]");
+        if (priceNode && Number.isFinite(priceValue)) priceNode.textContent = `от ${money(priceValue)} ₽`;
+        if (nameNode && pkg.name) nameNode.textContent = pkg.name;
+        if (taglineNode && pkg.tagline) taglineNode.textContent = pkg.tagline;
+        if (bestNode && pkg.bestFor) bestNode.textContent = pkg.bestFor;
+        if (itemsNode && Array.isArray(pkg.items)) {
+          itemsNode.innerHTML = pkg.items
+            .map(
+              (item) =>
+                `<li class="relative pl-6 text-[14px] leading-snug text-ink/85"><span class="absolute left-0 top-0 font-mono text-[13px] text-ink/30" aria-hidden="true">+</span>${escapeHtml(item)}</li>`,
+            )
+            .join("");
+        }
+      }
+
+      const typeButton = document.querySelector<HTMLButtonElement>(`[data-type][data-id="${pkg.id}"]`);
+      if (typeButton) {
+        if (Number.isFinite(priceValue)) typeButton.dataset.price = String(priceValue);
+        if (pkg.name) typeButton.dataset.label = pkg.name;
+        const spans = typeButton.querySelectorAll("span");
+        if (spans[0] && pkg.name) spans[0].textContent = pkg.name;
+        if (spans[1] && Number.isFinite(priceValue)) spans[1].textContent = `от ${money(priceValue)} ₽`;
+      }
+    }
+
+    for (const id of ["texts", "setup", "support"]) {
+      const button = document.querySelector<HTMLButtonElement>(`[data-extra][data-id="${id}"]`);
+      const value = price[id];
+      if (!button || !Number.isFinite(value)) continue;
+      button.dataset.price = String(value);
+      const cost = button.querySelector(".ml-auto");
+      if (cost) cost.textContent = `+ ${money(value)} ₽${button.dataset.monthly === "1" ? "/мес" : ""}`;
+    }
+
+    const ld = document.querySelector('script[type="application/ld+json"]');
+    if (ld?.textContent && Number.isFinite(price.visitka)) {
+      try {
+        const data = JSON.parse(ld.textContent);
+        if (data.offers) data.offers.price = price.visitka;
+        ld.textContent = JSON.stringify(data);
+      } catch {
+        /* запасная разметка остаётся */
+      }
+    }
+
+    document.documentElement.dataset.contentReady = "1";
+    document.dispatchEvent(new Event("site-content"));
+  }
+
+  fetch("/api/content")
+    .then((response) => (response.ok ? response.json() : null))
+    .then((content) => {
+      if (content) apply(content);
+    })
+    .catch(() => {
+      /* на сайте остаются цены из сборки */
+    });
+</script>

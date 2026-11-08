@@ -3,6 +3,10 @@ dist/
 .astro/
 .npm-cache/
 .env
+yandex/.state
+yandex/.apigw.yaml
+yandex/.lead-key
+yandex/.ci-key.json
 .DS_Store
 .gh-cache/
 _ff*/

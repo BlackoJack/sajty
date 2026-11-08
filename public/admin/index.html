@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Админка — сайты</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f1eee7;
+        --ink: #111214;
+        --lime: #c6f24e;
+        --line: rgba(17, 18, 20, 0.14);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
+      }
+      main { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+      h1 { font-size: 32px; letter-spacing: -0.04em; margin: 0; }
+      h2 { font-size: 20px; letter-spacing: -0.03em; margin: 28px 0 12px; }
+      p.note { color: rgba(17, 18, 20, 0.62); margin: 8px 0 0; }
+      form, section.card {
+        border: 1px solid var(--line);
+        background: #f7f4ee;
+        padding: 16px;
+        margin-top: 12px;
+      }
+      label { display: block; margin-top: 12px; font-size: 13px; }
+      input, textarea {
+        width: 100%;
+        margin-top: 4px;
+        border: 1px solid var(--line);
+        background: white;
+        color: inherit;
+        font: inherit;
+        padding: 8px 10px;
+      }
+      textarea { min-height: 88px; resize: vertical; }
+      .grid { display: grid; gap: 12px; }
+      @media (min-width: 720px) { .prices { grid-template-columns: 1fr 1fr 1fr; } }
+      button, .link {
+        border: 0;
+        background: var(--lime);
+        color: var(--ink);
+        font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 12px 14px;
+        cursor: pointer;
+      }
+      button.ghost { background: transparent; border: 1px solid var(--line); }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+      .status { min-height: 1.2em; margin-top: 10px; }
+      article.lead { border-top: 1px solid var(--line); padding: 12px 0; }
+      article.lead h3 { margin: 0; font-size: 16px; }
+      article.lead pre { white-space: pre-wrap; font: inherit; margin: 6px 0; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Админка</h1>
+      <p class="note">Цены, три позиции и заявки. Длинные тексты страницы здесь не правятся.</p>
+
+      <form id="login">
+        <label>Пароль
+          <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <div class="row"><button type="submit">Войти</button></div>
+        <p id="login-status" class="status" role="status"></p>
+      </form>
+
+      <div id="desk" class="hidden">
+        <form id="content-form">
+          <h2>Цены, ₽</h2>
+          <div class="grid prices" id="prices"></div>
+          <div id="packages"></div>
+          <div class="row">
+            <button type="submit">Сохранить на сайт</button>
+            <a class="link" href="/">Открыть сайт</a>
+          </div>
+          <p id="save-status" class="status" role="status"></p>
+        </form>
+
+        <section class="card">
+          <h2>Заявки</h2>
+          <div id="leads"></div>
+        </section>
+      </div>
+    </main>
+    <script>
+      const priceFields = [
+        ["visitka", "Визитка"],
+        ["landing", "Лендинг"],
+        ["catalog", "Каталог"],
+        ["texts", "Тексты"],
+        ["setup", "Домен и запуск"],
+        ["support", "Поддержка в месяц"],
+      ];
+      const loginForm = document.getElementById("login");
+      const desk = document.getElementById("desk");
+      const contentForm = document.getElementById("content-form");
+      const pricesBox = document.getElementById("prices");
+      const packagesBox = document.getElementById("packages");
+      const leadsBox = document.getElementById("leads");
+      const loginStatus = document.getElementById("login-status");
+      const saveStatus = document.getElementById("save-status");
+
+      const passwordKey = "sajty-admin";
+      const passwordOf = () => sessionStorage.getItem(passwordKey) || "";
+
+      async function admin(action, extra) {
+        const response = await fetch("/api/admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-password": passwordOf() },
+          body: JSON.stringify({ action, ...extra }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || String(response.status));
+        return data;
+      }
+
+      function field(name, label, value, multiline) {
+        const wrap = document.createElement("label");
+        wrap.textContent = label;
+        const input = document.createElement(multiline ? "textarea" : "input");
+        if (!multiline) input.type = name.startsWith("price.") ? "number" : "text";
+        input.name = name;
+        input.value = value ?? "";
+        if (input.type === "number") input.min = "0";
+        input.required = true;
+        wrap.append(input);
+        return wrap;
+      }
+
+      function fill(content) {
+        pricesBox.replaceChildren();
+        packagesBox.replaceChildren();
+        for (const [id, label] of priceFields) pricesBox.append(field("price." + id, label, content.price[id]));
+        content.packages.forEach((pkg, index) => {
+          const title = document.createElement("h2");
+          title.textContent = pkg.name || "Позиция " + (index + 1);
+          packagesBox.append(title);
+          packagesBox.append(field("pkg." + index + ".name", "Название", pkg.name));
+          packagesBox.append(field("pkg." + index + ".tagline", "Короткий текст", pkg.tagline, true));
+          packagesBox.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, true));
+          packagesBox.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), true));
+        });
+      }
+
+      function collect() {
+        const data = new FormData(contentForm);
+        const price = {};
+        for (const [id] of priceFields) price[id] = Number(data.get("price." + id));
+        const packages = [0, 1, 2].map((index) => ({
+          id: ["visitka", "landing", "catalog"][index],
+          name: String(data.get("pkg." + index + ".name") || ""),
+          tagline: String(data.get("pkg." + index + ".tagline") || ""),
+          bestFor: String(data.get("pkg." + index + ".bestFor") || ""),
+          items: String(data.get("pkg." + index + ".items") || "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+        }));
+        return { price, packages };
+      }
+
+      function renderLeads(leads) {
+        leadsBox.replaceChildren();
+        if (!leads.length) {
+          leadsBox.textContent = "Пока пусто.";
+          return;
+        }
+        for (const lead of leads) {
+          const article = document.createElement("article");
+          article.className = "lead";
+          const title = document.createElement("h3");
+          title.textContent = lead.name || "Без имени";
+          const when = document.createElement("p");
+          when.className = "note";
+          when.textContent = lead.at ? new Date(lead.at).toLocaleString("ru-RU") : "";
+          const contact = document.createElement("p");
+          const contactValue = String(lead.contact || "").trim();
+          if (!contactValue) {
+            contact.className = "note";
+            contact.textContent = "Контакт не указан";
+          } else {
+            const compact = contactValue.replace(/\s/g, "");
+            let href = "";
+            if (contactValue.includes("@") && !contactValue.startsWith("@")) href = "mailto:" + contactValue;
+            else if (contactValue.startsWith("@")) href = "https://t.me/" + encodeURIComponent(contactValue.slice(1));
+            else if (/^https?:\/\//.test(contactValue)) href = contactValue;
+            else if ((compact.match(/\d/g) || []).length >= 10) href = "tel:" + compact.replace(/[^\d+]/g, "");
+            if (href) {
+              const link = document.createElement("a");
+              link.textContent = contactValue;
+              link.href = href;
+              if (href.startsWith("http")) link.target = "_blank";
+              link.rel = "noopener";
+              contact.append(link);
+            } else contact.textContent = contactValue;
+          }
+          const text = document.createElement("pre");
+          text.textContent = lead.task || "";
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "ghost";
+          button.textContent = "Удалить";
+          button.addEventListener("click", async () => {
+            if (!confirm("Удалить заявку?")) return;
+            button.disabled = true;
+            try {
+              await admin("delete", { key: lead.key });
+              article.remove();
+            } catch {
+              button.disabled = false;
+              button.textContent = "Не удалилось";
+            }
+          });
+          article.append(title, when, contact, text, button);
+          leadsBox.append(article);
+        }
+      }
+
+      async function openDesk() {
+        const content = await fetch("/api/content").then((response) => response.json());
+        fill(content);
+        const listed = await admin("leads");
+        renderLeads(listed.leads || []);
+        loginForm.classList.add("hidden");
+        desk.classList.remove("hidden");
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        sessionStorage.setItem(passwordKey, document.getElementById("password").value);
+        loginStatus.textContent = "Проверяю…";
+        try {
+          await admin("login");
+          loginStatus.textContent = "";
+          await openDesk();
+        } catch {
+          sessionStorage.removeItem(passwordKey);
+          loginStatus.textContent = "Пароль не подошёл.";
+        }
+      });
+
+      contentForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        saveStatus.textContent = "Сохраняю…";
+        try {
+          await admin("save", { content: collect() });
+          saveStatus.textContent = "Сохранено. На сайте обновится после перезагрузки страницы.";
+        } catch {
+          saveStatus.textContent = "Не сохранилось. Проверьте поля: цены — целые числа, у позиции есть название, текст и хотя бы одна строка.";
+        }
+      });
+
+      if (passwordOf()) {
+        admin("login")
+          .then(openDesk)
+          .catch(() => sessionStorage.removeItem(passwordKey));
+      }
+    </script>
+  </body>
+</html>

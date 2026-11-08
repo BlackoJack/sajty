@@ -1,0 +1,83 @@
+openapi: 3.0.0
+info:
+  title: sajty
+  version: 1.0.0
+paths:
+  /api/lead:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: lead
+    options:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: lead
+  /api/content:
+    get:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: content
+    options:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: content
+  /api/admin:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: admin
+    options:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: __FUNCTION_ID__
+        tag: "$latest"
+        service_account_id: __SA_ID__
+        context:
+          route: admin
+  /admin:
+    get:
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: __BUCKET__
+        object: admin/index.html
+        service_account_id: __SA_ID__
+  /:
+    get:
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: __BUCKET__
+        object: index.html
+        service_account_id: __SA_ID__
+  /{file+}:
+    get:
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: __BUCKET__
+        object: "{file}"
+        service_account_id: __SA_ID__

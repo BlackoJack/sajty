@@ -46,13 +46,17 @@ npm run build    # статика в dist/
 
 ## Форма
 
-`POST /api/lead` → `functions/api/lead.ts`, работает на Cloudflare Pages. Нужны переменные окружения `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`.
+`POST /api/lead`. Два обработчика с одной и той же проверкой:
 
-Пока их нет — форма не падает, а предлагает написать в Telegram с уже собранным текстом.
+- Cloudflare Pages — `functions/api/lead.ts`
+- Yandex Cloud — `yandex/lead/index.js`, выкладка `npm run deploy:yandex`
+
+Нужны `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` в `.env` (для скрипта Яндекса) или в переменных Cloudflare. Пока их нет — форма предлагает написать в Telegram с уже собранным текстом. Если обработчик жив, а до Telegram запрос не дошёл, текст тот же, но с другой формулировкой.
 
 ## Публикация
 
-- **Cloudflare Pages**: build `npm run build`, output `dist`, папка `functions/` подхватывается сама.
+- **Yandex Cloud**: `npm run deploy:yandex` — статика в Object Storage, заявка в Cloud Functions, оба на одном API Gateway. Перед этим `yc init`, платёжный аккаунт на каталоге и заполненный `.env`.
+- **Cloudflare Pages**: build `npm run build`, output `dist`, папка `functions/` подхватывается сама. Для посетителей из России этот вариант сейчас ненадёжен.
 - **Свой сервер/кластер**: отдать `dist/` через nginx (см. пример в README основного сайта).
 
 ## Перед публикацией
@@ -72,9 +76,14 @@ npm run build    # статика в dist/
 
 1. Создать репозиторий, запушить: `git remote add origin git@github.com:USER/REPO.git && git push -u origin main`.
 2. **Settings → Pages → Source: GitHub Actions** (это важно, иначе Pages будет искать Jekyll).
-3. Дальше всё делает `.github/workflows/deploy.yml`: сборка, артефакт, публикация. Адрес и подпапку
-   workflow берёт из `configure-pages`, поэтому `SITE_URL` и `BASE_PATH` руками заполнять не нужно.
-4. Сайт будет на `https://USER.github.io/REPO/`.
+3. Дальше пуш в `main` или `master` запускает `.github/workflows/deploy.yml`. Один шаг публикует
+   статику на GitHub Pages, второй выкладывает сайт и функцию заявки в Яндекс. Адрес Pages workflow
+   берёт из `configure-pages`, поэтому `SITE_URL` и `BASE_PATH` руками заполнять не нужно.
+4. Для Яндекса в секретах репозитория нужны `YC_SA_JSON`, `YC_FOLDER_ID`, `YC_LEAD_KEY`,
+   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` и `ADMIN_PASSWORD`. Их записывает
+   `bash scripts/github-secrets.sh` после `gh auth login`. Без секретов Pages всё равно выйдет,
+   а шаг Яндекса остановится с именем недостающего секрета.
+5. Сайт на GitHub будет на `https://USER.github.io/REPO/`. Рабочая форма и админка живут на адресе Яндекса.
 
 ### GitLab Pages
 
