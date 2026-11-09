@@ -133,6 +133,98 @@
   }
 }
 
+.popup-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: end center;
+  padding: 1rem 1rem calc(5.5rem + env(safe-area-inset-bottom));
+  background: rgba(17, 18, 20, 0.35);
+}
+
+.popup-card {
+  position: relative;
+  width: min(26rem, 100%);
+  padding: 1.6rem 1.35rem 1.35rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 22px 50px rgba(17, 18, 20, 0.18);
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.popup-kicker {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.popup-title {
+  margin: 0.7rem 0 0;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.popup-text,
+.popup-perk {
+  margin: 0.8rem 0 0;
+}
+
+.popup-perk {
+  font-weight: 650;
+}
+
+.popup-take {
+  margin-top: 1.15rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .popup-layer {
+    place-items: center;
+    padding: 1.5rem;
+  }
+
+  .popup-take {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .popup-card {
+    animation: popup-rise 220ms ease-out both;
+  }
+}
+
+@keyframes popup-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;

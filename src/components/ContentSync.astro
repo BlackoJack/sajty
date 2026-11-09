@@ -34,17 +34,27 @@
       if (!item) continue;
       const href = item.url ? contactHref(id, item.url) : "";
       document.querySelectorAll<HTMLAnchorElement>(`[data-contact="${id}"]`).forEach((node) => {
-        if (href) node.href = href;
+        node.hidden = !href;
+        if (!href) return;
+        node.href = href;
         const label = node.querySelector("[data-contact-label]");
         if (label && item.label) label.textContent = item.label;
       });
     }
+    document.querySelectorAll<HTMLElement>("[data-contact-group]").forEach((group) => {
+      const links = [...group.querySelectorAll<HTMLAnchorElement>("[data-contact]")];
+      const visible = links.filter((node) => !node.hidden);
+      group.hidden = visible.length === 0;
+      const joiner = group.querySelector<HTMLElement>("[data-contact-and]");
+      if (joiner) joiner.hidden = visible.length < 2;
+    });
   }
 
   function apply(content: {
     price?: Record<string, number>;
     packages?: { id: string; name: string; tagline: string; bestFor: string; items: string[] }[];
     contacts?: Record<string, { label?: string; url?: string }>;
+    popups?: Popup[];
   }) {
     applyContacts(content.contacts);
     const price = content.price ?? {};
@@ -106,6 +116,141 @@
 
     document.documentElement.dataset.contentReady = "1";
     document.dispatchEvent(new Event("site-content"));
+    queuePopup(content);
+  }
+
+  type Popup = {
+    id: string;
+    title?: string;
+    text?: string;
+    kind?: string;
+    mode?: string;
+    value?: number;
+    gift?: string;
+    code?: string;
+    delay?: number;
+    repeat?: string;
+  };
+
+  function popupSeen(popup: Popup) {
+    const store = popup.repeat === "visit" ? sessionStorage : localStorage;
+    try {
+      const data = JSON.parse(store.getItem("sajty-popups") || "{}");
+      return data?.[popup.id] === "take" || data?.[popup.id] === "close";
+    } catch {
+      return false;
+    }
+  }
+
+  function rememberPopup(popup: Popup, state: string) {
+    const store = popup.repeat === "visit" ? sessionStorage : localStorage;
+    let data: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(store.getItem("sajty-popups") || "{}");
+      if (parsed && typeof parsed === "object") data = parsed;
+    } catch {
+      data = {};
+    }
+    data[popup.id] = state;
+    store.setItem("sajty-popups", JSON.stringify(data));
+  }
+
+  function perkLine(popup: Popup) {
+    if (popup.kind === "discount") {
+      const size = popup.mode === "amount" ? `${money(Number(popup.value) || 0)} ₽` : `${popup.value || 0}%`;
+      return `Скидка ${size}. Она приложится к заявке.`;
+    }
+    if (popup.kind === "gift" && popup.gift) return `Подарок: ${popup.gift}. Напишем его в заявке.`;
+    return "";
+  }
+
+  function takeLabel(popup: Popup) {
+    if (popup.kind === "discount") return "Забрать скидку";
+    if (popup.kind === "gift") return "Забрать подарок";
+    return "Хорошо";
+  }
+
+  function showOfferNote(popup: Popup) {
+    const note = document.getElementById("offer-note");
+    if (!note || !popup.code) return;
+    note.hidden = false;
+    note.textContent = perkLine(popup) || "Приложим к заявке.";
+  }
+
+  let popupTimer = 0;
+
+  function openNotice(popup: Popup) {
+    if (document.querySelector(".popup-layer")) return;
+    const layer = document.createElement("div");
+    layer.className = "popup-layer";
+    const card = document.createElement("div");
+    card.className = "popup-card";
+    card.setAttribute("role", "dialog");
+    card.setAttribute("aria-modal", "true");
+    card.setAttribute("aria-labelledby", "popup-title");
+    const closeButton = document.createElement("button");
+    closeButton.className = "popup-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Закрыть");
+    closeButton.textContent = "×";
+    const kicker = document.createElement("p");
+    kicker.className = "popup-kicker";
+    kicker.textContent = "Сайты";
+    const title = document.createElement("h2");
+    title.id = "popup-title";
+    title.className = "popup-title";
+    title.textContent = popup.title || "";
+    const text = document.createElement("p");
+    text.className = "popup-text";
+    text.textContent = popup.text || "";
+    card.append(closeButton, kicker, title, text);
+    const perk = perkLine(popup);
+    if (perk) {
+      const perkNode = document.createElement("p");
+      perkNode.className = "popup-perk";
+      perkNode.textContent = perk;
+      card.append(perkNode);
+    }
+    const take = document.createElement("button");
+    take.className = "btn btn-lime popup-take";
+    take.type = "button";
+    take.textContent = takeLabel(popup);
+    card.append(take);
+    layer.append(card);
+    const close = (state: string) => {
+      if (state === "take" && popup.code && popup.kind !== "message") {
+        sessionStorage.setItem("sajty-offer", popup.code);
+        showOfferNote(popup);
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      rememberPopup(popup, state);
+      layer.remove();
+      document.removeEventListener("keydown", onKey);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close("close");
+    };
+    layer.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".popup-take")) close("take");
+      else if (target === layer || target.closest(".popup-close")) close("close");
+    });
+    document.addEventListener("keydown", onKey);
+    document.body.append(layer);
+    take.focus();
+  }
+
+  function queuePopup(content: { popups?: Popup[] }) {
+    window.clearTimeout(popupTimer);
+    const popups = Array.isArray(content.popups) ? content.popups : [];
+    const kept = sessionStorage.getItem("sajty-offer") || "";
+    const held = popups.find((popup) => popup.code && popup.code === kept && popup.kind !== "message");
+    if (held) showOfferNote(held);
+    const popup = popups.find((item) => item && item.id && !popupSeen(item));
+    if (!popup) return;
+    const delay = Math.min(30, Math.max(0, Number(popup.delay) || 0)) * 1000;
+    popupTimer = window.setTimeout(() => openNotice(popup), delay);
   }
 
   fetch("/api/content", { cache: "no-store" })

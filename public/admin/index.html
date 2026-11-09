@@ -12,26 +12,30 @@
         --ink: #111214;
         --lime: #c6f24e;
         --line: rgba(17, 18, 20, 0.14);
+        --muted: rgba(17, 18, 20, 0.62);
       }
       * { box-sizing: border-box; }
+      html { scroll-padding-bottom: 96px; }
       body {
         margin: 0;
+        overflow-x: clip;
         background: var(--paper);
         color: var(--ink);
         font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
       }
-      main { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+      body.has-dock { padding-bottom: 92px; }
+      main { max-width: 880px; margin: 0 auto; padding: 32px 20px 24px; }
       h1 { font-size: 32px; letter-spacing: -0.04em; margin: 0; }
       h2 { font-size: 20px; letter-spacing: -0.03em; margin: 28px 0 12px; }
-      p.note { color: rgba(17, 18, 20, 0.62); margin: 8px 0 0; }
-      form, section.card {
+      p.note { color: var(--muted); margin: 8px 0 0; }
+      form, section.card, .panel {
         border: 1px solid var(--line);
         background: #f7f4ee;
         padding: 16px;
         margin-top: 12px;
       }
       label { display: block; margin-top: 12px; font-size: 13px; }
-      input, textarea {
+      input, textarea, select {
         width: 100%;
         margin-top: 4px;
         border: 1px solid var(--line);
@@ -39,11 +43,16 @@
         color: inherit;
         font: inherit;
         padding: 8px 10px;
+        min-height: 44px;
       }
       textarea { min-height: 88px; resize: vertical; }
       .grid { display: grid; gap: 12px; }
       @media (min-width: 720px) { .prices { grid-template-columns: 1fr 1fr 1fr; } }
-      button, .link {
+      button, a.link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
         border: 0;
         background: var(--lime);
         color: var(--ink);
@@ -52,20 +61,145 @@
         text-transform: uppercase;
         padding: 12px 14px;
         cursor: pointer;
+        text-decoration: none;
       }
-      button.ghost { background: transparent; border: 1px solid var(--line); }
+      button.ghost, a.link.ghost { background: transparent; border: 1px solid var(--line); }
+      button:disabled { opacity: 0.55; cursor: default; }
       .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
-      .status { min-height: 1.2em; margin-top: 10px; }
-      article.lead { border-top: 1px solid var(--line); padding: 12px 0; }
-      article.lead h3 { margin: 0; font-size: 16px; }
-      article.lead pre { white-space: pre-wrap; font: inherit; margin: 6px 0; }
-      .hidden { display: none; }
+      .status { min-height: 1.2em; margin: 0; }
+      .hidden { display: none !important; }
+      .tabs, .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+      .tabs button, .filters button, .pager button {
+        background: white;
+        color: var(--muted);
+        border: 1px solid var(--line);
+      }
+      .tabs button.active, .filters button.active {
+        background: var(--lime);
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      #popup-list { display: grid; gap: 8px; margin-top: 12px; }
+      .popup-strip {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+        min-height: 52px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        background: #fff;
+        text-align: left;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .popup-strip small { color: var(--muted); font-weight: 400; }
+      .checks label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+      .checks input { width: 18px; height: 18px; min-height: 18px; padding: 0; }
+      .sheet { margin-top: 12px; padding: 14px; border: 1px solid var(--line); background: #fff; }
+      .sheet p { margin: 8px 0 0; }
+      button.order-strip {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 92px auto minmax(0, 1fr) minmax(0, 180px);
+        gap: 10px;
+        align-items: center;
+        text-align: left;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        border-radius: 0;
+        padding: 10px 4px;
+      }
+      button.order-strip .name, button.order-strip .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      button.order-strip .who { color: var(--muted); font-weight: 400; }
+      .badge {
+        justify-self: start;
+        font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0;
+        text-transform: none;
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        background: white;
+      }
+      .badge-work { background: #fff3c4; }
+      .badge-done { background: var(--lime); }
+      .badge-cancelled { color: var(--muted); }
+      .lead-body { padding: 4px 0 16px; border-bottom: 1px solid var(--line); }
+      .lead-body pre { white-space: pre-wrap; font: inherit; margin: 8px 0; }
+      .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+      .dock {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: var(--paper);
+        border-top: 1px solid var(--line);
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      }
+      .dock .status { flex: 1; min-width: 0; }
+      button.fold-strip {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        text-align: left;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 560;
+        font-size: 15px;
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 2px;
+      }
+      button.fold-strip[aria-expanded="true"] {
+        border-color: var(--ink);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      button.fold-strip::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        margin-left: 12px;
+        flex: none;
+      }
+      button.fold-strip[aria-expanded="true"]::after {
+        transform: rotate(-135deg);
+        margin-top: 6px;
+      }
+      .fold-body {
+        border: 1px solid var(--line);
+        border-top: 0;
+        padding: 4px 14px 14px;
+        background: #f7f4ee;
+      }
+      @media (max-width: 640px) {
+        button.order-strip { grid-template-columns: 92px minmax(0, 1fr); }
+        button.order-strip .who { display: none; }
+        .dock { flex-wrap: wrap; }
+        .dock .status { flex-basis: 100%; }
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>Админка</h1>
-      <p class="note">Цены, три позиции, контакты на сайте и оповещение о заявке. Длинные тексты страницы здесь не правятся.</p>
+      <p class="note">Заявки, цены, три позиции, контакты и окна для гостей. Длинные тексты страницы здесь не правятся.</p>
 
       <form id="login">
         <label>Пароль
@@ -76,35 +210,129 @@
       </form>
 
       <div id="desk" class="hidden">
-        <form id="content-form">
-          <h2>Цены, ₽</h2>
-          <div class="grid prices" id="prices"></div>
-          <div id="packages"></div>
-          <h2>Контакты на сайте</h2>
-          <p class="note">Эти ссылки видят посетители. Токен бота сюда не входит.</p>
-          <div id="contacts"></div>
-          <h2>Оповещение о заявке</h2>
-          <p class="note">
-            Telegram из облака часто не открывается, поэтому заявка дополнительно уходит письмом.
-            Для Gmail нужен пароль приложения: аккаунт Google → безопасность → пароли приложений.
-            Сервер smtp.gmail.com, порт 465. Для Яндекс Почты сервер smtp.yandex.ru, тот же порт.
-            Пустой токен, chat id или пароль не стирают уже сохранённые.
-          </p>
-          <div id="notify"></div>
-          <div class="row">
-            <button type="submit">Сохранить на сайт</button>
-            <button type="button" id="test-mail" class="ghost">Проверить почту</button>
-            <a class="link" href="/">Открыть сайт</a>
-          </div>
-          <p id="save-status" class="status" role="status"></p>
-        </form>
+        <div class="tabs" role="tablist">
+          <button type="button" data-tab="leads" class="active">Заявки</button>
+          <button type="button" data-tab="site">Сайт</button>
+          <button type="button" data-tab="popups">Окна</button>
+        </div>
 
-        <section class="card">
-          <h2>Заявки</h2>
+        <section id="panel-leads" class="panel">
+          <div class="filters" id="filters"></div>
           <div id="leads"></div>
+          <div class="pager" id="pager"></div>
         </section>
+
+        <form id="content-form" class="hidden">
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold aria-expanded="true">Цены, ₽</button>
+            <div class="fold-body"><div class="grid prices" id="prices"></div></div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold data-pkg-title="0" aria-expanded="false">Визитка</button>
+            <div class="fold-body" id="pkg-0" hidden></div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold data-pkg-title="1" aria-expanded="false">Лендинг</button>
+            <div class="fold-body" id="pkg-1" hidden></div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold data-pkg-title="2" aria-expanded="false">Каталог</button>
+            <div class="fold-body" id="pkg-2" hidden></div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold aria-expanded="false">Контакты</button>
+            <div class="fold-body" hidden>
+              <p class="note">Пустое поле прячет кнопку на сайте. У Max нужны и подпись, и ссылка, либо оба поля пустые.</p>
+              <div id="contacts"></div>
+            </div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold aria-expanded="false">Оповещение</button>
+            <div class="fold-body" hidden>
+              <p class="note">
+                Telegram из облака часто не открывается, поэтому заявка дополнительно уходит письмом.
+                Для Gmail нужен пароль приложения: аккаунт Google → безопасность → пароли приложений.
+                Сервер smtp.gmail.com, порт 465. Для Яндекс Почты сервер smtp.yandex.ru, тот же порт.
+                Пустой токен, chat id или пароль не стирают уже сохранённые.
+              </p>
+              <div id="notify"></div>
+              <div class="row">
+                <button type="button" id="test-mail" class="ghost">Проверить почту</button>
+              </div>
+            </div>
+          </section>
+        </form>
+        <div id="panel-popups" class="panel hidden">
+        <p class="intro">На странице показывается одно окно: первое, которое гость ещё не закрыл. Если он нажимает «Забрать», код скидки или подарка прикладывается к заявке. Процент не больше 40, сумма не больше 20 000 ₽.</p>
+        <div class="row">
+          <button type="button" id="popup-new">Новое окно</button>
+        </div>
+        <div id="popup-list" class="stack"></div>
+        <form id="popup-form" class="hidden" autocomplete="off">
+          <div class="row">
+            <label>Адрес
+              <input name="id" required maxlength="41" pattern="[A-Za-z0-9-]+" placeholder="vesna" />
+            </label>
+            <div class="checks">
+              <label><input name="enabled" type="checkbox" checked /> Показывать</label>
+            </div>
+          </div>
+          <label>Заголовок
+            <input name="title" required maxlength="80" />
+          </label>
+          <label>Текст
+            <textarea name="text" required maxlength="400"></textarea>
+          </label>
+          <div class="row">
+            <label>Тип
+              <select name="kind">
+                <option value="message">Объявление</option>
+                <option value="discount">Скидка</option>
+                <option value="gift">Подарок</option>
+              </select>
+            </label>
+            <label>Пауза, секунд
+              <input name="delay" type="number" min="0" max="30" step="1" value="4" required />
+            </label>
+            <label>Повтор
+              <select name="repeat">
+                <option value="once">Один раз</option>
+                <option value="visit">Каждый визит</option>
+              </select>
+            </label>
+          </div>
+          <div class="row" data-popup-discount hidden>
+            <label>Скидка
+              <select name="mode">
+                <option value="percent">Процент</option>
+                <option value="amount">Сумма, ₽</option>
+              </select>
+            </label>
+            <label>Размер
+              <input name="value" type="number" min="1" step="1" value="10" />
+            </label>
+          </div>
+          <label data-popup-gift hidden>Подарок
+            <input name="gift" maxlength="120" />
+          </label>
+          <label data-popup-code hidden>Код
+            <input name="code" maxlength="12" placeholder="VESNA" />
+          </label>
+          <div class="sheet" id="popup-preview"></div>
+          <div class="row">
+            <button type="submit">Сохранить окно</button>
+            <button type="button" id="popup-delete" class="danger">Удалить</button>
+          </div>
+          <p id="popup-status" class="status" role="status"></p>
+        </form>
+        </div>
       </div>
     </main>
+    <div id="dock" class="dock hidden">
+      <p id="dock-status" class="status" role="status"></p>
+      <button type="button" id="dock-save">Сохранить</button>
+      <a id="dock-site" class="link ghost" href="/">Открыть сайт</a>
+    </div>
     <script>
       const priceFields = [
         ["visitka", "Визитка"],
@@ -114,19 +342,44 @@
         ["setup", "Домен и запуск"],
         ["support", "Поддержка в месяц"],
       ];
+      const statusLabel = { new: "Новая", work: "В работе", done: "Завершена", cancelled: "Отменена" };
+      const filters = [
+        ["all", "Все"],
+        ["new", "Новые"],
+        ["work", "В работе"],
+        ["done", "Завершённые"],
+        ["cancelled", "Отменённые"],
+      ];
+      const pageSize = 8;
       const loginForm = document.getElementById("login");
       const desk = document.getElementById("desk");
       const contentForm = document.getElementById("content-form");
       const pricesBox = document.getElementById("prices");
-      const packagesBox = document.getElementById("packages");
+      const packageBoxes = [0, 1, 2].map((index) => document.getElementById("pkg-" + index));
       const contactsBox = document.getElementById("contacts");
       const notifyBox = document.getElementById("notify");
       const leadsBox = document.getElementById("leads");
+      const filtersBox = document.getElementById("filters");
+      const pagerBox = document.getElementById("pager");
       const loginStatus = document.getElementById("login-status");
-      const saveStatus = document.getElementById("save-status");
+      const dock = document.getElementById("dock");
+      const dockStatus = document.getElementById("dock-status");
+      const leadsPanel = document.getElementById("panel-leads");
+      const popupsPanel = document.getElementById("panel-popups");
+      const popupForm = document.getElementById("popup-form");
+      const popupList = document.getElementById("popup-list");
+      const popupPreview = document.getElementById("popup-preview");
+      const popupStatus = document.getElementById("popup-status");
+      const popupDelete = document.getElementById("popup-delete");
 
       const passwordKey = "sajty-admin";
       const passwordOf = () => sessionStorage.getItem(passwordKey) || "";
+      let leads = [];
+      let popups = [];
+      let popupCreating = false;
+      let filter = "all";
+      let page = 0;
+      let openKey = "";
 
       async function admin(action, extra) {
         const response = await fetch("/api/admin", {
@@ -150,7 +403,7 @@
         if (input.type === "number") input.min = "0";
         if (settings.placeholder) input.placeholder = settings.placeholder;
         if (settings.autocomplete) input.autocomplete = settings.autocomplete;
-        input.required = settings.required !== false;
+        input.required = settings.required === true;
         wrap.append(input);
         return wrap;
       }
@@ -158,18 +411,19 @@
       function fill(content, notify) {
         const alerts = notify || {};
         pricesBox.replaceChildren();
-        packagesBox.replaceChildren();
+        packageBoxes.forEach((box) => box.replaceChildren());
         contactsBox.replaceChildren();
         notifyBox.replaceChildren();
-        for (const [id, label] of priceFields) pricesBox.append(field("price." + id, label, content.price[id]));
+        for (const [id, label] of priceFields) pricesBox.append(field("price." + id, label, content.price[id], { required: true }));
         content.packages.forEach((pkg, index) => {
-          const title = document.createElement("h2");
-          title.textContent = pkg.name || "Позиция " + (index + 1);
-          packagesBox.append(title);
-          packagesBox.append(field("pkg." + index + ".name", "Название", pkg.name));
-          packagesBox.append(field("pkg." + index + ".tagline", "Короткий текст", pkg.tagline, { multiline: true }));
-          packagesBox.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, { multiline: true }));
-          packagesBox.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), { multiline: true }));
+          const box = packageBoxes[index];
+          if (!box) return;
+          const strip = contentForm.querySelector(`[data-pkg-title="${index}"]`);
+          if (strip) strip.textContent = pkg.name || "Позиция " + (index + 1);
+          box.append(field("pkg." + index + ".name", "Название", pkg.name, { required: true }));
+          box.append(field("pkg." + index + ".tagline", "Короткий текст", pkg.tagline, { multiline: true, required: true }));
+          box.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, { multiline: true, required: true }));
+          box.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), { multiline: true, required: true }));
         });
         const contacts = content.contacts || {};
         contactsBox.append(field("contact.telegram", "Telegram", contacts.telegram?.label || "", { placeholder: "@devopsnsk или ссылка t.me" }));
@@ -177,12 +431,12 @@
         contactsBox.append(field("contact.email", "Почта", contacts.email?.label || "", { placeholder: "name@gmail.com" }));
         contactsBox.append(field("contact.maxLabel", "Max, подпись", contacts.max?.label || "", { placeholder: "профиль" }));
         contactsBox.append(field("contact.maxUrl", "Max, ссылка", contacts.max?.url || "", { placeholder: "https://max.ru/..." }));
-        notifyBox.append(field("notify.telegramToken", "Токен бота", alerts.telegramToken || "", { type: "password", required: false, autocomplete: "new-password" }));
-        notifyBox.append(field("notify.telegramChatId", "Chat id", alerts.telegramChatId || "", { required: false, placeholder: "-100..." }));
-        notifyBox.append(field("notify.mailTo", "Куда слать заявки", alerts.mailTo || "", { required: false, placeholder: "name@gmail.com" }));
-        notifyBox.append(field("notify.smtpHost", "Сервер почты", alerts.smtpHost || "smtp.gmail.com", { required: false }));
-        notifyBox.append(field("notify.smtpUser", "Логин почты", alerts.smtpUser || "", { required: false, placeholder: "name@gmail.com" }));
-        notifyBox.append(field("notify.smtpPassword", "Пароль приложения", alerts.smtpPassword || "", { type: "password", required: false, autocomplete: "new-password" }));
+        notifyBox.append(field("notify.telegramToken", "Токен бота", alerts.telegramToken || "", { type: "password", autocomplete: "new-password" }));
+        notifyBox.append(field("notify.telegramChatId", "Chat id", alerts.telegramChatId || "", { placeholder: "-100..." }));
+        notifyBox.append(field("notify.mailTo", "Куда слать заявки", alerts.mailTo || "", { placeholder: "name@gmail.com" }));
+        notifyBox.append(field("notify.smtpHost", "Сервер почты", alerts.smtpHost || "smtp.gmail.com"));
+        notifyBox.append(field("notify.smtpUser", "Логин почты", alerts.smtpUser || "", { placeholder: "name@gmail.com" }));
+        notifyBox.append(field("notify.smtpPassword", "Пароль приложения", "", { type: "password", autocomplete: "new-password", placeholder: alerts.smtpPassword ? "сохранён, введите новый чтобы заменить" : "" }));
       }
 
       function collect() {
@@ -223,80 +477,363 @@
         };
       }
 
-      function renderLeads(leads) {
-        leadsBox.replaceChildren();
-        if (!leads.length) {
-          leadsBox.textContent = "Пока пусто.";
-          return;
+      function contactHref(value) {
+        const contactValue = String(value || "").trim();
+        if (!contactValue) return "";
+        const compact = contactValue.replace(/\s/g, "");
+        if (contactValue.includes("@") && !contactValue.startsWith("@")) return "mailto:" + contactValue;
+        if (contactValue.startsWith("@")) return "https://t.me/" + encodeURIComponent(contactValue.slice(1));
+        if (/^https?:\/\//.test(contactValue)) return contactValue;
+        if ((compact.match(/\d/g) || []).length >= 10) return "tel:" + compact.replace(/[^\d+]/g, "");
+        return "";
+      }
+
+      function offerLine(offer) {
+        if (!offer) return "";
+        if (offer.kind === "discount") {
+          const size = offer.mode === "amount" ? offer.value + " ₽" : offer.value + "%";
+          return "Окно: скидка " + size + ", код " + offer.code;
         }
-        for (const lead of leads) {
-          const article = document.createElement("article");
-          article.className = "lead";
-          const title = document.createElement("h3");
-          title.textContent = lead.name || "Без имени";
+        if (offer.kind === "gift") return "Окно: подарок «" + (offer.gift || "") + "», код " + offer.code;
+        return "";
+      }
+
+      function deliveryLine(lead) {
+        if (!lead.notified) return "";
+        const parts = [];
+        if (lead.mail) parts.push("Письмо отправлено");
+        else if (lead.mailConfigured) parts.push("Письмо не ушло");
+        else parts.push("Почта не настроена");
+        if (lead.telegram) parts.push("Telegram отправлен");
+        else if (lead.telegramConfigured) parts.push("Telegram не дошёл");
+        return parts.join(" · ");
+      }
+
+      function showTab(name) {
+        document.querySelectorAll("[data-tab]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.tab === name);
+        });
+        leadsPanel.classList.toggle("hidden", name !== "leads");
+        contentForm.classList.toggle("hidden", name !== "site");
+        popupsPanel.classList.toggle("hidden", name !== "popups");
+      }
+
+      function popupError(error) {
+        const known = {
+          popup_id: "Адрес — латиница, цифры и дефис, например vesna. Такой адрес уже может быть занят.",
+          popup_text: "Нужны заголовок и текст. У подарка ещё короткое название.",
+          popup_code: "Код — 3–12 латинских букв и цифр, и он не должен повторяться.",
+          popup_discount: "Процент от 1 до 40 или сумма от 1 до 20 000 ₽.",
+          validation: "Проверьте паузу от 0 до 30 секунд. Окон не больше восьми.",
+        };
+        return known[error] || "Окно не сохранилось.";
+      }
+
+      function popupField(name) {
+        return popupForm.elements.namedItem(name);
+      }
+
+      function paintPopupKind() {
+        const kind = popupField("kind").value;
+        popupForm.querySelector("[data-popup-discount]").hidden = kind !== "discount";
+        popupForm.querySelector("[data-popup-gift]").hidden = kind !== "gift";
+        popupForm.querySelector("[data-popup-code]").hidden = kind === "message";
+      }
+
+      function popupPerk(popup) {
+        if (popup.kind === "discount") {
+          const size = popup.mode === "amount" ? popup.value + " ₽" : popup.value + "%";
+          return "Скидка " + size + ". Она приложится к заявке.";
+        }
+        if (popup.kind === "gift" && popup.gift) return "Подарок: " + popup.gift + ". Напишем его в заявке.";
+        return "";
+      }
+
+      function popupTakeLabel(popup) {
+        if (popup.kind === "discount") return "Забрать скидку";
+        if (popup.kind === "gift") return "Забрать подарок";
+        return "Хорошо";
+      }
+
+      function previewPopup() {
+        const popup = readPopupForm();
+        popupPreview.replaceChildren();
+        const title = document.createElement("strong");
+        title.textContent = popup.title || "Заголовок";
+        const text = document.createElement("p");
+        text.textContent = popup.text || "Текст окна";
+        popupPreview.append(title, text);
+        const perk = popupPerk(popup);
+        if (perk) {
+          const line = document.createElement("p");
+          line.textContent = perk;
+          popupPreview.append(line);
+        }
+        const button = document.createElement("p");
+        button.textContent = popupTakeLabel(popup);
+        popupPreview.append(button);
+      }
+
+      function readPopupForm() {
+        const kind = popupField("kind").value;
+        const delay = Number(popupField("delay").value);
+        const value = Number(popupField("value").value);
+        return {
+          id: popupField("id").value.trim().toLowerCase(),
+          enabled: popupField("enabled").checked,
+          title: popupField("title").value.trim(),
+          text: popupField("text").value.trim(),
+          kind,
+          mode: kind === "discount" ? popupField("mode").value : "",
+          value: kind === "discount" ? value : 0,
+          gift: kind === "gift" ? popupField("gift").value.trim() : "",
+          code: kind === "message" ? "" : popupField("code").value.trim().toUpperCase(),
+          delay,
+          repeat: popupField("repeat").value,
+        };
+      }
+
+      function fillPopup(popup) {
+        popupCreating = false;
+        popupForm.classList.remove("hidden");
+        popupField("id").value = popup.id;
+        popupField("id").readOnly = true;
+        popupField("enabled").checked = popup.enabled === true;
+        popupField("title").value = popup.title || "";
+        popupField("text").value = popup.text || "";
+        popupField("kind").value = popup.kind || "message";
+        popupField("mode").value = popup.mode === "amount" ? "amount" : "percent";
+        popupField("value").value = popup.value || 10;
+        popupField("gift").value = popup.gift || "";
+        popupField("code").value = popup.code || "";
+        popupField("delay").value = popup.delay ?? 4;
+        popupField("repeat").value = popup.repeat === "visit" ? "visit" : "once";
+        popupDelete.classList.remove("hidden");
+        popupStatus.textContent = "";
+        paintPopupKind();
+        previewPopup();
+      }
+
+      function renderPopups() {
+        const kinds = { message: "Объявление", discount: "Скидка", gift: "Подарок" };
+        popupList.replaceChildren();
+        for (const popup of popups) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "popup-strip";
+          const title = document.createElement("span");
+          title.textContent = popup.title;
+          const meta = document.createElement("small");
+          meta.textContent = (kinds[popup.kind] || popup.kind) + " · " + (popup.enabled ? "показывается" : "выключено");
+          button.append(title, meta);
+          button.addEventListener("click", () => fillPopup(popup));
+          popupList.append(button);
+        }
+      }
+
+      async function savePopup() {
+        const popup = readPopupForm();
+        if (!Number.isInteger(popup.delay) || popup.delay < 0 || popup.delay > 30) throw new Error("validation");
+        if (popup.kind === "discount" && !Number.isInteger(popup.value)) throw new Error("popup_discount");
+        const saved = await admin("save-popup", { popup, create: popupCreating });
+        popups = saved.popups || [];
+        popupCreating = false;
+        popupField("id").readOnly = true;
+        popupDelete.classList.remove("hidden");
+        renderPopups();
+      }
+
+      function renderFilters() {
+        filtersBox.replaceChildren();
+        for (const [id, label] of filters) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.filter = id;
+          button.textContent = label;
+          button.classList.toggle("active", filter === id);
+          button.setAttribute("aria-pressed", filter === id ? "true" : "false");
+          button.addEventListener("click", () => {
+            filter = id;
+            page = 0;
+            for (const item of filtersBox.querySelectorAll("button")) {
+              const on = item.dataset.filter === filter;
+              item.classList.toggle("active", on);
+              item.setAttribute("aria-pressed", on ? "true" : "false");
+            }
+            renderLeads();
+          });
+          filtersBox.append(button);
+        }
+      }
+
+      function renderLeads() {
+        const rows = filter === "all" ? leads : leads.filter((lead) => lead.status === filter);
+        const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+        if (page >= pages) page = pages - 1;
+        if (page < 0) page = 0;
+        const slice = rows.slice(page * pageSize, page * pageSize + pageSize);
+        leadsBox.replaceChildren();
+        if (!rows.length) {
+          const empty = document.createElement("p");
+          empty.className = "note";
+          empty.textContent = "Пока пусто.";
+          leadsBox.append(empty);
+        }
+        for (const lead of slice) {
+          const strip = document.createElement("button");
+          strip.type = "button";
+          strip.className = "order-strip";
+          const num = document.createElement("span");
+          num.textContent = lead.number || (lead.at ? new Date(lead.at).toLocaleDateString("ru-RU") : "—");
+          const badge = document.createElement("span");
+          badge.className = "badge" + (lead.status && lead.status !== "new" ? " badge-" + lead.status : "");
+          badge.textContent = statusLabel[lead.status] || statusLabel.new;
+          const name = document.createElement("span");
+          name.className = "name";
+          name.textContent = lead.name || "Без имени";
+          const who = document.createElement("span");
+          who.className = "who";
+          who.textContent = lead.contact || "";
+          strip.append(num, badge, name, who);
+          strip.addEventListener("click", () => {
+            openKey = openKey === lead.key ? "" : lead.key;
+            renderLeads();
+          });
+          leadsBox.append(strip);
+          if (openKey !== lead.key) continue;
+
+          const body = document.createElement("div");
+          body.className = "lead-body";
           const when = document.createElement("p");
           when.className = "note";
           when.textContent = lead.at ? new Date(lead.at).toLocaleString("ru-RU") : "";
           const contact = document.createElement("p");
-          const contactValue = String(lead.contact || "").trim();
-          if (!contactValue) {
-            contact.className = "note";
-            contact.textContent = "Контакт не указан";
-          } else {
-            const compact = contactValue.replace(/\s/g, "");
-            let href = "";
-            if (contactValue.includes("@") && !contactValue.startsWith("@")) href = "mailto:" + contactValue;
-            else if (contactValue.startsWith("@")) href = "https://t.me/" + encodeURIComponent(contactValue.slice(1));
-            else if (/^https?:\/\//.test(contactValue)) href = contactValue;
-            else if ((compact.match(/\d/g) || []).length >= 10) href = "tel:" + compact.replace(/[^\d+]/g, "");
-            if (href) {
-              const link = document.createElement("a");
-              link.textContent = contactValue;
-              link.href = href;
-              if (href.startsWith("http")) link.target = "_blank";
+          const href = contactHref(lead.contact);
+          if (href) {
+            const link = document.createElement("a");
+            link.href = href;
+            link.textContent = lead.contact;
+            if (href.startsWith("http")) {
+              link.target = "_blank";
               link.rel = "noopener";
-              contact.append(link);
-            } else contact.textContent = contactValue;
-          }
+            }
+            contact.append(link);
+          } else contact.textContent = lead.contact || "Контакт не указан";
           const text = document.createElement("pre");
           text.textContent = lead.task || "";
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "ghost";
-          button.textContent = "Удалить";
-          button.addEventListener("click", async () => {
-            if (!confirm("Удалить заявку?")) return;
-            button.disabled = true;
-            try {
-              await admin("delete", { key: lead.key });
-              article.remove();
-            } catch {
-              button.disabled = false;
-              button.textContent = "Не удалилось";
-            }
-          });
-          if (lead.notified) {
+          body.append(when, contact, text);
+          const offerText = offerLine(lead.offer);
+          if (offerText) {
+            const offer = document.createElement("p");
+            offer.className = "note";
+            offer.textContent = offerText;
+            body.append(offer);
+          }
+          const sent = deliveryLine(lead);
+          if (sent) {
             const delivery = document.createElement("p");
             delivery.className = "note";
-            const parts = [];
-            if (lead.mail) parts.push("Письмо отправлено");
-            else if (lead.mailConfigured) parts.push("Письмо не ушло");
-            else parts.push("Почта не настроена");
-            if (lead.telegram) parts.push("Telegram отправлен");
-            else if (lead.telegramConfigured) parts.push("Telegram не дошёл");
-            delivery.textContent = parts.join(" · ");
-            article.append(title, when, contact, delivery, text, button);
-          } else article.append(title, when, contact, text, button);
-          leadsBox.append(article);
+            delivery.textContent = sent;
+            body.append(delivery);
+          }
+          const statusLabelNode = document.createElement("label");
+          statusLabelNode.textContent = "Статус";
+          const status = document.createElement("select");
+          status.dataset.role = "status";
+          for (const [id, label] of Object.entries(statusLabel)) {
+            const option = document.createElement("option");
+            option.value = id;
+            option.textContent = label;
+            if (id === (lead.status || "new")) option.selected = true;
+            status.append(option);
+          }
+          statusLabelNode.append(status);
+          const noteLabel = document.createElement("label");
+          noteLabel.textContent = "Заметка";
+          const note = document.createElement("textarea");
+          note.dataset.role = "note";
+          note.maxLength = 1000;
+          note.value = lead.note || "";
+          noteLabel.append(note);
+          const actions = document.createElement("div");
+          actions.className = "row";
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "ghost";
+          remove.textContent = "Удалить";
+          remove.addEventListener("click", () => removeLead(lead, remove));
+          actions.append(remove);
+          body.append(statusLabelNode, noteLabel, actions);
+          leadsBox.append(body);
+        }
+        pagerBox.replaceChildren();
+        if (pages > 1) {
+          const prev = document.createElement("button");
+          prev.type = "button";
+          prev.textContent = "Назад";
+          prev.disabled = page === 0;
+          prev.addEventListener("click", () => {
+            page -= 1;
+            renderLeads();
+          });
+          const mark = document.createElement("span");
+          mark.textContent = page + 1 + " / " + pages;
+          const next = document.createElement("button");
+          next.type = "button";
+          next.textContent = "Дальше";
+          next.disabled = page >= pages - 1;
+          next.addEventListener("click", () => {
+            page += 1;
+            renderLeads();
+          });
+          pagerBox.append(prev, mark, next);
         }
       }
 
+      async function removeLead(lead, button) {
+        if (!confirm("Удалить заявку?")) return;
+        button.disabled = true;
+        try {
+          await admin("delete", { key: lead.key });
+          leads = leads.filter((item) => item.key !== lead.key);
+          if (openKey === lead.key) openKey = "";
+          dockStatus.textContent = "Заявка удалена.";
+          renderLeads();
+        } catch {
+          button.disabled = false;
+          dockStatus.textContent = "Не удалилось.";
+        }
+      }
+
+      async function saveLead() {
+        const body = leadsBox.querySelector(".lead-body");
+        const lead = leads.find((item) => item.key === openKey);
+        if (!body || !lead) return false;
+        const status = body.querySelector("[data-role=status]").value;
+        const note = body.querySelector("[data-role=note]").value;
+        const saved = await admin("update-lead", { key: lead.key, status, note });
+        const next = saved.lead || { ...lead, status, note };
+        leads = leads.map((item) => (item.key === lead.key ? { ...item, ...next } : item));
+        renderLeads();
+        return true;
+      }
+
+      async function saveSite() {
+        const collected = collect();
+        await admin("save", {
+          content: { price: collected.price, packages: collected.packages, contacts: collected.contacts },
+          notify: collected.notify,
+        });
+        const password = contentForm.querySelector("[name='notify.smtpPassword']");
+        if (password) password.value = "";
+      }
+
       function mailMessage(result) {
-        if (result.ok) return "Письмо ушло. Если настройки ещё не сохраняли — нажмите «Сохранить на сайт».";
+        if (result.ok) return "Письмо ушло. Если настройки ещё не сохраняли — нажмите «Сохранить».";
         if (result.error === "smtp_no_password") {
           const gmail = result.gmail ? "Gmail доступен" : "Gmail не отвечает";
           const yandex = result.yandex ? "Яндекс доступен" : "Яндекс не отвечает";
-          return `Пароль приложения пустой. ${gmail}, ${yandex}. Впишите пароль и сохраните.`;
+          return "Пароль приложения пустой. " + gmail + ", " + yandex + ". Впишите пароль и сохраните.";
         }
         const known = {
           smtp_535: "Почта отклонила пароль. Для Gmail нужен пароль приложения, не обычный пароль от ящика.",
@@ -309,14 +846,26 @@
       }
 
       async function openDesk() {
-        const content = await fetch("/api/content").then((response) => response.json());
+        const content = await fetch("/api/content", { cache: "no-store" }).then((response) => response.json());
         const settings = await admin("settings");
         fill(content, settings.notify || {});
         const listed = await admin("leads");
-        renderLeads(listed.leads || []);
+        leads = listed.leads || [];
+        const listedPopups = await admin("popups");
+        popups = listedPopups.popups || [];
+        renderFilters();
+        renderLeads();
+        renderPopups();
         loginForm.classList.add("hidden");
         desk.classList.remove("hidden");
+        dock.classList.remove("hidden");
+        document.body.classList.add("has-dock");
+        showTab("leads");
       }
+
+      document.querySelectorAll("[data-tab]").forEach((button) => {
+        button.addEventListener("click", () => showTab(button.dataset.tab));
+      });
 
       loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -332,25 +881,116 @@
         }
       });
 
+      contentForm.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-fold]");
+        if (!button || !contentForm.contains(button)) return;
+        const willOpen = button.getAttribute("aria-expanded") !== "true";
+        for (const item of contentForm.querySelectorAll("[data-fold]")) {
+          const body = item.nextElementSibling;
+          const on = item === button && willOpen;
+          item.setAttribute("aria-expanded", on ? "true" : "false");
+          if (body) body.hidden = !on;
+        }
+      });
+
       contentForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        saveStatus.textContent = "Сохраняю…";
+        dockStatus.textContent = "Сохраняю…";
         try {
-          const collected = collect();
-          await admin("save", { content: { price: collected.price, packages: collected.packages, contacts: collected.contacts }, notify: collected.notify });
-          saveStatus.textContent = "Сохранено. На сайте обновится после перезагрузки страницы.";
+          await saveSite();
+          dockStatus.textContent = "Сохранено. На сайте обновится после перезагрузки страницы.";
         } catch {
-          saveStatus.textContent = "Не сохранилось. Проверьте цены, тексты позиций, контакты и почту. Порт только 465.";
+          dockStatus.textContent = "Не сохранилось. Проверьте цены, тексты позиций, контакты и почту. Порт только 465.";
+        }
+      });
+
+      document.getElementById("dock-save").addEventListener("click", async () => {
+        dockStatus.textContent = "Сохраняю…";
+        try {
+          if (popupsPanel && !popupsPanel.classList.contains("hidden")) {
+            if (popupForm.classList.contains("hidden")) {
+              dockStatus.textContent = "Сначала откройте окно.";
+              return;
+            }
+            await savePopup();
+            dockStatus.textContent = "Окно сохранено. На сайте появится после перезагрузки страницы.";
+            return;
+          }
+          if (openKey && leadsPanel && !leadsPanel.classList.contains("hidden")) {
+            const saved = await saveLead();
+            dockStatus.textContent = saved ? "Заявка сохранена." : "Сначала откройте заявку.";
+            return;
+          }
+          await saveSite();
+          dockStatus.textContent = "Сохранено. На сайте обновится после перезагрузки страницы.";
+        } catch (error) {
+          dockStatus.textContent = popupsPanel && !popupsPanel.classList.contains("hidden")
+            ? popupError(error.message)
+            : "Не сохранилось. Проверьте поля и порт 465.";
+        }
+      });
+
+      document.getElementById("popup-new").addEventListener("click", () => {
+        popupCreating = true;
+        popupForm.reset();
+        popupForm.classList.remove("hidden");
+        popupField("id").readOnly = false;
+        popupField("enabled").checked = true;
+        popupField("kind").value = "message";
+        popupField("delay").value = "4";
+        popupField("repeat").value = "once";
+        popupField("value").value = "10";
+        popupDelete.classList.add("hidden");
+        popupStatus.textContent = "";
+        paintPopupKind();
+        previewPopup();
+        popupField("id").focus();
+      });
+
+      popupForm.addEventListener("input", () => {
+        paintPopupKind();
+        previewPopup();
+      });
+      popupForm.addEventListener("change", () => {
+        paintPopupKind();
+        previewPopup();
+      });
+
+      popupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        popupStatus.textContent = "Сохраняю…";
+        dockStatus.textContent = "Сохраняю…";
+        try {
+          await savePopup();
+          popupStatus.textContent = "Окно сохранено.";
+          dockStatus.textContent = "Окно сохранено. На сайте появится после перезагрузки страницы.";
+        } catch (error) {
+          popupStatus.textContent = popupError(error.message);
+          dockStatus.textContent = popupError(error.message);
+        }
+      });
+
+      popupDelete.addEventListener("click", async () => {
+        popupStatus.textContent = "Удаляю…";
+        try {
+          const removed = await admin("delete-popup", { id: popupField("id").value });
+          popups = removed.popups || [];
+          popupForm.classList.add("hidden");
+          popupStatus.textContent = "";
+          renderPopups();
+          dockStatus.textContent = "Окно удалено.";
+        } catch (error) {
+          popupStatus.textContent = popupError(error.message);
         }
       });
 
       document.getElementById("test-mail").addEventListener("click", async () => {
-        saveStatus.textContent = "Проверяю почту…";
+        dockStatus.textContent = "Проверяю почту…";
         try {
           const result = await admin("test-mail", { notify: collect().notify });
-          saveStatus.textContent = mailMessage(result);
+          dockStatus.textContent = mailMessage(result);
         } catch {
-          saveStatus.textContent = "Проверка не выполнилась.";
+          dockStatus.textContent = "Проверка не выполнилась.";
         }
       });
 

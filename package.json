@@ -7,6 +7,8 @@
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
+    "test": "node --test --test-concurrency=1 yandex/lead/content.test.js",
+    "admin:dev": "node scripts/dev-api.mjs",
     "deploy:yandex": "bash scripts/deploy-yandex.sh"
   },
   "dependencies": {

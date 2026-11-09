@@ -10,7 +10,7 @@ import sitemap from "@astrojs/sitemap";
  *
  * Без переменных собирается обычная корневая версия.
  */
-const site = process.env.SITE_URL || "https://blackojack.github.io/sajty";
+const site = process.env.SITE_URL || "https://delam.site";
 const base = process.env.BASE_PATH || "/";
 
 export default defineConfig({
@@ -18,6 +18,23 @@ export default defineConfig({
   base,
   integrations: [sitemap()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      {
+        name: "admin-index",
+        configureServer(server) {
+          server.middlewares.use((req, _res, next) => {
+            const url = req.url?.split("?")[0];
+            if (url === "/admin" || url === "/admin/") req.url = "/admin/index.html";
+            next();
+          });
+        },
+      },
+    ],
+    server: {
+      proxy: {
+        "/api": process.env.ADMIN_API || "http://127.0.0.1:8787",
+      },
+    },
   },
 });

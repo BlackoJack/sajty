@@ -7,6 +7,7 @@ yandex/.state
 yandex/.apigw.yaml
 yandex/.lead-key
 yandex/.ci-key.json
+yandex/.local/
 .DS_Store
 .gh-cache/
 _ff*/

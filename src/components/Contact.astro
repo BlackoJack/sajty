@@ -1,5 +1,6 @@
 ---
 import { config } from "../config";
+import ContactIcon from "./ContactIcon.astro";
 ---
 
 <section id="contact" class="border-b border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
@@ -23,7 +24,7 @@ import { config } from "../config";
             rel="noopener"
             class="group flex items-center justify-between gap-4 py-4"
           >
-            <span class="mono text-muted">Telegram</span>
+            <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="telegram" />Telegram</span>
             <span class="flex items-center gap-3 text-[16px]">
               <span data-contact-label>{config.contacts.telegram.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
@@ -36,7 +37,7 @@ import { config } from "../config";
             rel="noopener"
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
-            <span class="mono text-muted">WhatsApp</span>
+            <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="whatsapp" />WhatsApp</span>
             <span class="flex items-center gap-3 text-[16px]">
               <span data-contact-label>{config.contacts.whatsapp.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
@@ -49,7 +50,7 @@ import { config } from "../config";
             rel="noopener"
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
-            <span class="mono text-muted">Max</span>
+            <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="max" />Max</span>
             <span class="flex items-center gap-3 text-[16px]">
               <span data-contact-label>{config.contacts.max.label}</span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
@@ -60,7 +61,7 @@ import { config } from "../config";
             href={config.contacts.email.url}
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
-            <span class="mono text-muted">Почта</span>
+            <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="email" />Почта</span>
             <span class="text-[16px]" data-contact-label>{config.contacts.email.label}</span>
           </a>
         </div>
@@ -104,6 +105,8 @@ import { config } from "../config";
             <input class="hidden" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
           </div>
 
+          <p id="offer-note" class="mt-4 text-[14px] leading-relaxed" hidden></p>
+
           <button type="submit" class="btn btn-lime mt-5 w-full">
             Отправить
             <span aria-hidden="true">→</span>
@@ -126,6 +129,36 @@ import { config } from "../config";
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const status = document.getElementById("form-status");
   const fallbackTelegram = config.contacts.telegram.url;
+  let guardToken = "";
+
+  function refreshGuard() {
+    fetch("/api/guard", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        guardToken = data?.token || "";
+      })
+      .catch(() => {
+        guardToken = "";
+      });
+  }
+
+  refreshGuard();
+
+  function telegramFallback(name: string, contact: string, task: string, lead: string) {
+    if (!status) return;
+    const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
+    const telegram = document.querySelector<HTMLAnchorElement>("[data-contact='telegram']");
+    const href = `${telegram?.href || fallbackTelegram}?text=${text}`;
+    status.replaceChildren();
+    status.append(lead);
+    const link = document.createElement("a");
+    link.className = "underline";
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Telegram";
+    status.append(link, " — текст уже собран.");
+  }
 
   if (form && status) {
     form.addEventListener("submit", async (event) => {
@@ -152,8 +185,30 @@ import { config } from "../config";
         const response = await fetch(form.action, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, contact, task, company: honeypot }),
+          body: JSON.stringify({
+            name,
+            contact,
+            task,
+            company: honeypot,
+            guard: guardToken,
+            offer: sessionStorage.getItem("sajty-offer") || "",
+          }),
         });
+        const payload = await response.json().catch(() => ({}));
+
+        if (response.status === 422 && payload.error === "wait") {
+          status.textContent = "Подождите пару секунд и отправьте ещё раз.";
+          return;
+        }
+        if (response.status === 422 && payload.error === "guard") {
+          refreshGuard();
+          status.textContent = "Обновите страницу и отправьте ещё раз.";
+          return;
+        }
+        if (response.status === 429) {
+          telegramFallback(name, contact, task, "С этого адреса уже много заявок. Напишите напрямую: ");
+          return;
+        }
 
         if (!response.ok) {
           failedStatus = response.status;
@@ -162,19 +217,14 @@ import { config } from "../config";
 
         status.textContent = "Отправлено. Ответлю в течение рабочего дня.";
         form.reset();
+        refreshGuard();
       } catch {
-        const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
-        const telegram = document.querySelector<HTMLAnchorElement>("[data-contact='telegram']");
-        const href = `${telegram?.href || fallbackTelegram}?text=${text}`;
-        status.replaceChildren();
-        status.append(failedStatus === 502 ? "Заявка не сохранилась. Напишите напрямую: " : "Форма на этом хостинге не подключена. Напишите напрямую: ");
-        const link = document.createElement("a");
-        link.className = "underline";
-        link.href = href;
-        link.target = "_blank";
-        link.rel = "noopener";
-        link.textContent = "Telegram";
-        status.append(link, " — текст уже собран.");
+        telegramFallback(
+          name,
+          contact,
+          task,
+          failedStatus === 502 ? "Заявка не сохранилась. Напишите напрямую: " : "Форма на этом хостинге не подключена. Напишите напрямую: ",
+        );
       } finally {
         if (button) button.disabled = false;
       }

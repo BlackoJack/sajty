@@ -70,6 +70,7 @@ function routeOf(event) {
   const pathName = String(event?.path || event?.url || event?.requestContext?.path || "");
   if (pathName.includes("/api/content")) return "content";
   if (pathName.includes("/api/admin")) return "admin";
+  if (pathName.includes("/api/guard")) return "guard";
   return "lead";
 }
 
@@ -131,6 +132,7 @@ function cleanContactUrl(value, protocol, hosts) {
 
 function contactFromTelegram(value) {
   const raw = String(value ?? "").trim();
+  if (!raw) return { label: "", url: "" };
   let user = "";
   if (raw.startsWith("@")) user = raw.slice(1);
   else if (/^https?:\/\//i.test(raw)) {
@@ -149,6 +151,7 @@ function contactFromTelegram(value) {
 
 function contactFromPhone(value) {
   const raw = String(value ?? "").trim();
+  if (!raw) return { label: "", url: "" };
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 15) return null;
   const normalized = digits.length === 11 && digits.startsWith("8") ? `7${digits.slice(1)}` : digits;
@@ -157,13 +160,18 @@ function contactFromPhone(value) {
 }
 
 function contactFromEmail(value) {
-  const address = addressOf(value);
+  const raw = String(value ?? "").trim();
+  if (!raw) return { label: "", url: "" };
+  const address = addressOf(raw);
   if (!address) return null;
   return { label: address, url: `mailto:${address}` };
 }
 
 function contactFromMax(value) {
   if (!value || typeof value !== "object") return null;
+  const labelRaw = String(value.label ?? "").trim();
+  const urlRaw = String(value.url ?? "").trim();
+  if (!labelRaw && !urlRaw) return { label: "", url: "" };
   const label = cleanText(value.label, 40);
   const url = cleanContactUrl(value.url, "https:", ["max.ru"]);
   if (!label || !url) return null;
@@ -204,7 +212,102 @@ function sanitizeContent(input) {
   }
   const contacts = input.contacts == null ? sanitizeContacts(DEFAULT_CONTENT.contacts) : sanitizeContacts(input.contacts);
   if (!contacts) return null;
-  return { price, packages, contacts };
+  const popups = checkPopups(input.popups);
+  if (!popups.ok) return null;
+  return { price, packages, contacts, popups: popups.value };
+}
+
+function cleanPopupId(value) {
+  const id = String(value ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,39}[a-z0-9])?$/.test(id)) return "";
+  return id;
+}
+
+function cleanCode(value) {
+  const code = String(value ?? "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{3,12}$/.test(code)) return "";
+  return code;
+}
+
+function checkPopup(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return { ok: false, error: "validation" };
+  const id = cleanPopupId(input.id);
+  if (!id) return { ok: false, error: "popup_id" };
+  const title = cleanText(input.title, 80);
+  const text = cleanText(input.text, 400);
+  if (!title || !text) return { ok: false, error: "popup_text" };
+  if (typeof input.enabled !== "boolean") return { ok: false, error: "validation" };
+  if (input.kind !== "message" && input.kind !== "discount" && input.kind !== "gift") return { ok: false, error: "validation" };
+  if (!Number.isInteger(input.delay) || input.delay < 0 || input.delay > 30) return { ok: false, error: "validation" };
+  if (input.repeat !== "once" && input.repeat !== "visit") return { ok: false, error: "validation" };
+  let mode = "";
+  let value = 0;
+  let gift = "";
+  let code = "";
+  if (input.kind === "discount") {
+    if (input.mode !== "percent" && input.mode !== "amount") return { ok: false, error: "validation" };
+    if (!Number.isInteger(input.value)) return { ok: false, error: "popup_discount" };
+    if (input.mode === "percent" && (input.value < 1 || input.value > 40)) return { ok: false, error: "popup_discount" };
+    if (input.mode === "amount" && (input.value < 1 || input.value > 20000)) return { ok: false, error: "popup_discount" };
+    mode = input.mode;
+    value = input.value;
+    code = cleanCode(input.code);
+    if (!code) return { ok: false, error: "popup_code" };
+  } else if (input.kind === "gift") {
+    gift = cleanText(input.gift, 120);
+    if (!gift) return { ok: false, error: "popup_text" };
+    code = cleanCode(input.code);
+    if (!code) return { ok: false, error: "popup_code" };
+  }
+  return {
+    ok: true,
+    value: { id, enabled: input.enabled, title, text, kind: input.kind, mode, value, gift, code, delay: input.delay, repeat: input.repeat },
+  };
+}
+
+function checkPopups(input) {
+  if (input == null) return { ok: true, value: [] };
+  if (!Array.isArray(input) || input.length > 8) return { ok: false, error: "validation" };
+  const popups = [];
+  const ids = new Set();
+  const codes = new Set();
+  for (const item of input) {
+    const checked = checkPopup(item);
+    if (!checked.ok) return checked;
+    if (ids.has(checked.value.id)) return { ok: false, error: "popup_id" };
+    if (checked.value.code) {
+      if (codes.has(checked.value.code)) return { ok: false, error: "popup_code" };
+      codes.add(checked.value.code);
+    }
+    ids.add(checked.value.id);
+    popups.push(checked.value);
+  }
+  return { ok: true, value: popups };
+}
+
+function publicContent(content) {
+  return {
+    price: content.price,
+    packages: content.packages,
+    contacts: content.contacts,
+    popups: (content.popups || []).filter((popup) => popup.enabled),
+  };
+}
+
+function offerFrom(content, code) {
+  const clean = cleanCode(code);
+  if (!clean) return null;
+  const popup = (content?.popups || []).find((item) => item.enabled && item.code === clean && item.kind !== "message");
+  if (!popup) return null;
+  return {
+    id: popup.id,
+    kind: popup.kind,
+    title: popup.title,
+    code: popup.code,
+    gift: popup.gift,
+    mode: popup.mode,
+    value: popup.value,
+  };
 }
 
 function sanitizeNotify(input, previous) {
@@ -230,7 +333,53 @@ function sanitizeNotify(input, previous) {
   return { telegramToken, telegramChatId, mailTo, smtpHost, smtpPort: 465, smtpUser, smtpPassword };
 }
 
+function localFile(objectKey) {
+  const root = path.resolve(process.env.LOCAL_ROOT || "");
+  const full = path.resolve(root, objectKey || ".");
+  if (full !== root && !full.startsWith(`${root}${path.sep}`)) return "";
+  return full;
+}
+
+function localList(prefix) {
+  const dir = localFile(String(prefix || "").replace(/\/$/, "") || ".");
+  if (!dir || !fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => `${prefix}${entry.name}`);
+}
+
+function localS3(method, objectKey) {
+  const file = localFile(objectKey);
+  if (!file) return { ok: false, status: 400, text: "" };
+  if (method === "GET" || method === "HEAD") {
+    if (!fs.existsSync(file)) return { ok: false, status: 404, text: "" };
+    return { ok: true, status: 200, text: method === "HEAD" ? "" : fs.readFileSync(file, "utf8") };
+  }
+  if (method === "DELETE") {
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+    return { ok: true, status: 204, text: "" };
+  }
+  return { ok: false, status: 405, text: "" };
+}
+
+function localPut(objectKey, body) {
+  const file = localFile(objectKey);
+  if (!file) return { ok: false, status: 400, text: "" };
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, body);
+  return { ok: true, status: 200, text: "" };
+}
+
 async function s3(method, objectKey, { query = null, body = "", contentType = "" } = {}) {
+  if (process.env.LOCAL_ROOT) {
+    if (method === "GET" && query && query.prefix) {
+      const keys = localList(String(query.prefix));
+      return { ok: true, status: 200, text: keys.map((key) => `<Key>${key}</Key>`).join("") };
+    }
+    if (method === "PUT") return localPut(objectKey, body);
+    return localS3(method, objectKey);
+  }
   const bucket = process.env.LEADS_BUCKET;
   const accessKey = process.env.LEAD_ACCESS_KEY_ID;
   const secretKey = process.env.LEAD_SECRET_ACCESS_KEY;
@@ -507,44 +656,76 @@ function listKeys(xml) {
   let match = pattern.exec(xml);
   while (match) {
     const key = match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-    if (key.startsWith("leads/") && key.endsWith(".json") && !key.includes("..")) keys.push(key);
+    if (key !== "leads/sequence.json" && leadKeyOk(key)) keys.push(key);
     match = pattern.exec(xml);
   }
   return keys;
 }
 
+const LEAD_STATUS = new Set(["new", "work", "done", "cancelled"]);
+
 function leadKeyOk(key) {
   return typeof key === "string" && /^leads\/[0-9TZ.\-]+\.json$/.test(key);
+}
+
+function leadView(data, key) {
+  return {
+    key,
+    number: String(data.number || ""),
+    name: String(data.name ?? "").trim().slice(0, 100),
+    contact: String(data.contact ?? "").trim().slice(0, 120),
+    task: String(data.task ?? "").replace(/\r\n/g, "\n").trim().slice(0, 2000),
+    note: String(data.note ?? "").replace(/\r\n/g, "\n").trim().slice(0, 1000),
+    status: LEAD_STATUS.has(data.status) ? data.status : "new",
+    at: String(data.at ?? "").trim().slice(0, 40),
+    offer:
+      data.offer && typeof data.offer === "object"
+        ? offerFrom({ popups: [{ ...data.offer, enabled: true }] }, data.offer.code)
+        : null,
+    notified: typeof data.mailConfigured === "boolean",
+    mail: data.mail === true,
+    telegram: data.telegram === true,
+    mailConfigured: data.mailConfigured === true,
+    telegramConfigured: data.telegramConfigured === true,
+  };
 }
 
 async function listLeads() {
   const listed = await s3("GET", "", { query: { "list-type": "2", prefix: "leads/" } });
   if (!listed.ok) return null;
-  const keys = listKeys(listed.text).sort().reverse().slice(0, 30);
+  const keys = listKeys(listed.text).slice(0, 100);
   const rows = await Promise.all(
     keys.map(async (key) => {
       const object = await s3("GET", key);
       if (!object.ok) return null;
       try {
-        const data = JSON.parse(object.text);
-        return {
-          key,
-          name: String(data.name ?? "").trim().slice(0, 100),
-          contact: String(data.contact ?? "").trim().slice(0, 120),
-          task: String(data.task ?? "").replace(/\r\n/g, "\n").trim().slice(0, 2000),
-          at: String(data.at ?? "").trim().slice(0, 40),
-          notified: typeof data.mailConfigured === "boolean",
-          mail: data.mail === true,
-          telegram: data.telegram === true,
-          mailConfigured: data.mailConfigured === true,
-          telegramConfigured: data.telegramConfigured === true,
-        };
+        return leadView(JSON.parse(object.text), key);
       } catch {
         return null;
       }
     }),
   );
   return rows.filter(Boolean).sort((a, b) => (a.at < b.at ? 1 : -1));
+}
+
+async function takeLeadNumber() {
+  const key = "leads/sequence.json";
+  const stored = await s3("GET", key);
+  let current = 1000;
+  if (stored.ok) {
+    try {
+      const parsed = JSON.parse(stored.text);
+      if (Number.isInteger(parsed.n) && parsed.n >= 1000 && parsed.n < 999999) current = parsed.n;
+    } catch {
+      current = 1000;
+    }
+  }
+  const n = current + 1;
+  const written = await s3("PUT", key, {
+    body: JSON.stringify({ n }),
+    contentType: "application/json",
+  });
+  return written.ok ? n : 0;
 }
 
 async function putLead(objectKey, record) {
@@ -555,13 +736,27 @@ async function putLead(objectKey, record) {
   return result.ok;
 }
 
-function leadMessage(name, contact, task) {
-  return ["Новая заявка с сайта", "", `Имя: ${name}`, `Связь: ${contact}`, "", task].join("\n");
+function offerLine(offer) {
+  if (!offer) return "";
+  if (offer.kind === "discount") {
+    const size = offer.mode === "amount" ? `${offer.value} ₽` : `${offer.value}%`;
+    return `Окно: скидка ${size}, код ${offer.code}`;
+  }
+  if (offer.kind === "gift") return `Окно: подарок «${offer.gift}», код ${offer.code}`;
+  return "";
 }
 
-async function deliverLead(name, contact, task) {
+function leadMessage(number, name, contact, task, offer) {
+  const lines = [`Заявка ${number}`, "", `Имя: ${name}`, `Связь: ${contact}`];
+  const extra = offerLine(offer);
+  if (extra) lines.push(extra);
+  lines.push("", task);
+  return lines.join("\n");
+}
+
+async function deliverLead(number, name, contact, task, offer) {
   const notify = await readNotify();
-  const text = leadMessage(name, contact, task);
+  const text = leadMessage(number, name, contact, task, offer);
   const mailConfigured = Boolean(notify?.smtpPassword && notify.smtpUser && notify.mailTo);
   const telegramConfigured = Boolean(notify?.telegramToken && notify.telegramChatId);
   const mail = mailConfigured
@@ -572,7 +767,7 @@ async function deliverLead(name, contact, task) {
           user: notify.smtpUser,
           password: notify.smtpPassword,
           to: notify.mailTo,
-          subject: `Заявка с сайта: ${name}`,
+          subject: `Заявка ${number}`,
           text,
         }).then(() => true),
         9000,
@@ -600,12 +795,124 @@ async function sendTelegram(token, chatId, text) {
   return response.ok;
 }
 
+const GUARD_MAX_MS = 2 * 60 * 60 * 1000;
+const HITS_KEY = "guard/hits.json";
+
+function guardSecret() {
+  return crypto.createHash("sha256").update(`sajty-guard:${process.env.ADMIN_PASSWORD || "local"}`).digest();
+}
+
+function guardMinMs() {
+  const raw = Number(process.env.GUARD_MIN_MS);
+  if (Number.isInteger(raw) && raw >= 0 && raw <= 60000) return raw;
+  return 4000;
+}
+
+function issueGuard(at = Date.now()) {
+  const nonce = crypto.randomBytes(9).toString("base64url");
+  const payload = `${at}.${nonce}`;
+  const sig = crypto.createHmac("sha256", guardSecret()).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function parseGuard(token) {
+  const parts = String(token || "").split(".");
+  if (parts.length !== 3) return { id: "" };
+  const [atRaw, nonce, sig] = parts;
+  if (!/^\d{10,16}$/.test(atRaw) || !/^[A-Za-z0-9_-]{8,24}$/.test(nonce) || !/^[A-Za-z0-9_-]{20,80}$/.test(sig)) return { id: "" };
+  const payload = `${atRaw}.${nonce}`;
+  const expected = crypto.createHmac("sha256", guardSecret()).update(payload).digest("base64url");
+  const left = Buffer.from(sig);
+  const right = Buffer.from(expected);
+  if (left.length !== right.length || !crypto.timingSafeEqual(left, right)) return { id: "" };
+  const age = Date.now() - Number(atRaw);
+  if (age < 0 || age > GUARD_MAX_MS) return { id: "" };
+  if (age < guardMinMs()) return { wait: true, id: "" };
+  return { id: payload };
+}
+
+function clientMark(event) {
+  const forwarded = header(event, "x-forwarded-for").split(",")[0].trim();
+  const ip = forwarded || header(event, "x-real-ip") || "none";
+  return crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16);
+}
+
+function contactMark(contact) {
+  const text = String(contact || "").trim().toLowerCase();
+  const digits = text.replace(/\D/g, "");
+  if (digits.length >= 10) {
+    const normalized = digits.length === 11 && digits.startsWith("8") ? `7${digits.slice(1)}` : digits;
+    return `tel:${normalized}`;
+  }
+  if (text.includes("@") && !text.startsWith("@")) {
+    const address = addressOf(text);
+    if (address) return `mail:${address}`;
+  }
+  if (text.startsWith("@")) return `tg:${text.slice(1)}`;
+  return `text:${text.slice(0, 80)}`;
+}
+
+async function readHits() {
+  const stored = await s3("GET", HITS_KEY);
+  if (stored.status === 404) return [];
+  if (!stored.ok) return null;
+  try {
+    const parsed = JSON.parse(stored.text);
+    return Array.isArray(parsed.hits) ? parsed.hits : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeHits(hits) {
+  const day = Date.now() - 24 * 60 * 60 * 1000;
+  const fresh = hits.filter((hit) => hit && typeof hit.at === "number" && hit.at > day).slice(-400);
+  const result = await s3("PUT", HITS_KEY, {
+    body: JSON.stringify({ hits: fresh }),
+    contentType: "application/json",
+  });
+  return result.ok;
+}
+
+function tooBusy(hits, ip, who) {
+  const hour = Date.now() - 60 * 60 * 1000;
+  const day = Date.now() - 24 * 60 * 60 * 1000;
+  if (hits.filter((hit) => hit.kind === "lead" && hit.ip === ip && hit.at > hour).length >= 8) return true;
+  if (who && hits.filter((hit) => hit.kind === "lead" && hit.who === who && hit.at > day).length >= 4) return true;
+  return false;
+}
+
+async function claimGate(event, guard, who) {
+  const hits = await readHits();
+  const list = Array.isArray(hits) ? hits : [];
+  if (hits && list.some((hit) => hit.token === guard.id)) return { error: "guard" };
+  if (hits && tooBusy(list, clientMark(event), who)) return { error: "busy" };
+  return { id: guard.id, ip: clientMark(event), who: who || "", hits: list };
+}
+
+async function rememberGate(gate) {
+  if (!gate?.id) return;
+  const hits = Array.isArray(gate.hits) ? gate.hits.slice() : [];
+  hits.push({ at: Date.now(), kind: "lead", ip: gate.ip, who: gate.who || "", token: gate.id });
+  try {
+    await writeHits(hits);
+  } catch {
+    /* лимит не должен терять уже сохранённую заявку */
+  }
+}
+
+async function handleGuard(method) {
+  if (method === "OPTIONS") return empty(204);
+  if (method !== "GET") return json(405, { ok: false, error: "method_not_allowed" });
+  return json(200, { ok: true, token: issueGuard() });
+}
+
 async function handleContent(method) {
   if (method === "OPTIONS") return empty(204);
   if (method !== "GET") return json(405, { ok: false, error: "method_not_allowed" });
   const content = await readContent();
   if (!content) return json(502, { ok: false, error: "content_unavailable" });
-  return json(200, content);
+  return json(200, publicContent(content));
 }
 
 async function handleAdmin(event, method) {
@@ -630,10 +937,49 @@ async function handleAdmin(event, method) {
     const content = sanitizeContent(body.content);
     const notify = sanitizeNotify(body.notify, await readNotify());
     if (!content || !notify) return json(422, { ok: false, error: "validation" });
+    const current = await readContent();
+    if (current && body.content && body.content.popups == null) content.popups = current.popups || [];
     const notifySaved = await writeNotify(notify);
     const saved = await writeContent(content);
     if (!saved || !notifySaved) return json(502, { ok: false, error: "save_failed" });
     return json(200, { ok: true });
+  }
+
+  if (action === "popups") {
+    const content = await readContent();
+    if (!content) return json(502, { ok: false, error: "content_unavailable" });
+    return json(200, { ok: true, popups: content.popups || [] });
+  }
+
+  if (action === "save-popup") {
+    const checked = checkPopup(body.popup);
+    if (!checked.ok) return json(422, { ok: false, error: checked.error });
+    const current = await readContent();
+    if (!current) return json(502, { ok: false, error: "content_unavailable" });
+    const popups = Array.isArray(current.popups) ? current.popups.slice() : [];
+    const exists = popups.some((popup) => popup.id === checked.value.id);
+    if (body.create === true && exists) return json(409, { ok: false, error: "popup_id" });
+    if (checked.value.code && popups.some((popup) => popup.id !== checked.value.id && popup.code === checked.value.code)) {
+      return json(422, { ok: false, error: "popup_code" });
+    }
+    if (!exists && popups.length >= 8) return json(422, { ok: false, error: "validation" });
+    const nextPopups = exists
+      ? popups.map((popup) => (popup.id === checked.value.id ? checked.value : popup))
+      : popups.concat(checked.value);
+    const next = sanitizeContent({ ...current, popups: nextPopups });
+    if (!next || !(await writeContent(next))) return json(502, { ok: false, error: "save_failed" });
+    return json(200, { ok: true, popup: checked.value, popups: next.popups });
+  }
+
+  if (action === "delete-popup") {
+    const id = cleanPopupId(body.id);
+    if (!id) return json(422, { ok: false, error: "popup_id" });
+    const current = await readContent();
+    if (!current) return json(502, { ok: false, error: "content_unavailable" });
+    const popups = (current.popups || []).filter((popup) => popup.id !== id);
+    const next = sanitizeContent({ ...current, popups });
+    if (!next || !(await writeContent(next))) return json(502, { ok: false, error: "save_failed" });
+    return json(200, { ok: true, popups: next.popups });
   }
 
   if (action === "test-mail") {
@@ -665,6 +1011,22 @@ async function handleAdmin(event, method) {
     return json(200, { ok: true, leads });
   }
 
+  if (action === "update-lead") {
+    if (!leadKeyOk(body.key) || !LEAD_STATUS.has(String(body.status || ""))) return json(422, { ok: false, error: "validation" });
+    const object = await s3("GET", body.key);
+    if (!object.ok) return json(404, { ok: false, error: "not_found" });
+    let data;
+    try {
+      data = JSON.parse(object.text);
+    } catch {
+      return json(422, { ok: false, error: "validation" });
+    }
+    data.status = String(body.status);
+    data.note = String(body.note ?? "").replace(/\r\n/g, "\n").trim().slice(0, 1000);
+    if (!(await putLead(body.key, data))) return json(502, { ok: false, error: "save_failed" });
+    return json(200, { ok: true, lead: leadView(data, body.key) });
+  }
+
   if (action === "delete") {
     if (!leadKeyOk(body.key)) return json(422, { ok: false, error: "validation" });
     const removed = await s3("DELETE", body.key);
@@ -683,13 +1045,24 @@ async function handleLead(event, method) {
   if (body.error === "bad_json") return json(400, { ok: false, error: "bad_json" });
   if (typeof body.company === "string" && body.company.trim() !== "") return json(200, { ok: true });
 
+  const guard = parseGuard(body.guard);
+  if (guard.wait) return json(422, { ok: false, error: "wait" });
+  if (!guard.id) return json(422, { ok: false, error: "guard" });
+
   const name = String(body.name ?? "").trim().slice(0, 100);
   const contact = String(body.contact ?? "").trim().slice(0, 120);
   const task = String(body.task ?? "").trim().slice(0, 2000);
   if (name.length < 2 || contact.length < 5 || task.length < 10) return json(422, { ok: false, error: "validation" });
 
-  const objectKey = `leads/${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-  const record = { name, contact, task, at: new Date().toISOString() };
+  const gate = await claimGate(event, guard, contactMark(contact));
+  if (gate.error) return json(gate.error === "busy" ? 429 : 422, { ok: false, error: gate.error });
+
+  const n = await takeLeadNumber();
+  if (!n) return json(502, { ok: false, error: "save_failed" });
+  const number = `С-${n}`;
+  const objectKey = `leads/${n}.json`;
+  const offer = offerFrom(await readContent(), body.offer);
+  const record = { number, name, contact, task, note: "", status: "new", offer, at: new Date().toISOString() };
   let saved = false;
   try {
     saved = await putLead(objectKey, record);
@@ -697,10 +1070,11 @@ async function handleLead(event, method) {
     saved = false;
   }
   if (!saved) return json(502, { ok: false, error: "save_failed" });
+  await rememberGate(gate);
 
   let delivery = { mail: false, telegram: false, mailConfigured: false, telegramConfigured: false };
   try {
-    delivery = await deliverLead(name, contact, task);
+    delivery = await deliverLead(number, name, contact, task, offer);
   } catch {
     delivery = { mail: false, telegram: false, mailConfigured: false, telegramConfigured: false };
   }
@@ -709,12 +1083,13 @@ async function handleLead(event, method) {
   } catch {
     /* заявка уже лежит, отметка о письме не обязательна */
   }
-  return json(200, { ok: true });
+  return json(200, { ok: true, number });
 }
 
 module.exports.handler = async function handler(event) {
   const method = String(event?.httpMethod || event?.requestContext?.httpMethod || "GET").toUpperCase();
   const route = routeOf(event);
+  if (route === "guard") return handleGuard(method);
   if (route === "content") return handleContent(method);
   if (route === "admin") return handleAdmin(event, method);
   return handleLead(event, method);

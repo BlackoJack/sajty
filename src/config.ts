@@ -18,7 +18,7 @@ export const config = {
   city: "Новосибирск",
 
   // TODO: домен после покупки (и в astro.config.mjs тоже)
-  siteUrl: "https://blackojack.github.io/sajty",
+  siteUrl: "https://delam.site",
 
   contacts: {
     // TODO: проверьте ссылку — сейчас взята из резюме
