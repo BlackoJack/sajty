@@ -50,12 +50,47 @@
     });
   }
 
+  function applyProfile(profile?: { name?: string }) {
+    const name = String(profile?.name || "").replace(/\s+/g, " ").trim();
+    document.querySelectorAll<HTMLElement>("[data-profile-name]").forEach((node) => {
+      node.textContent = name;
+      node.hidden = !name;
+    });
+    return name;
+  }
+
+  function applyExample(example?: { url?: string }) {
+    let href = "";
+    try {
+      const url = new URL(String(example?.url || ""));
+      if (url.protocol === "https:" && !url.username && !url.password) href = url.toString();
+    } catch {
+      href = "";
+    }
+    document.querySelectorAll<HTMLAnchorElement>("[data-example]").forEach((node) => {
+      const cta = node.hasAttribute("data-example-cta");
+      if (!href) {
+        node.removeAttribute("href");
+        if (cta) node.hidden = true;
+        return;
+      }
+      node.href = href;
+      node.target = "_blank";
+      node.rel = "noopener";
+      node.hidden = false;
+    });
+  }
+
   function apply(content: {
     price?: Record<string, number>;
     packages?: { id: string; name: string; tagline: string; bestFor: string; items: string[] }[];
     contacts?: Record<string, { label?: string; url?: string }>;
+    profile?: { name?: string };
+    example?: { url?: string };
     popups?: Popup[];
   }) {
+    const profileName = applyProfile(content.profile);
+    applyExample(content.example);
     applyContacts(content.contacts);
     const price = content.price ?? {};
     const visitka = document.querySelector("[data-price-slot='visitka']");
@@ -104,10 +139,14 @@
     }
 
     const ld = document.querySelector('script[type="application/ld+json"]');
-    if (ld?.textContent && Number.isFinite(price.visitka)) {
+    if (ld?.textContent && (profileName || Number.isFinite(price.visitka))) {
       try {
         const data = JSON.parse(ld.textContent);
-        if (data.offers) data.offers.price = price.visitka;
+        if (data.offers && Number.isFinite(price.visitka)) data.offers.price = price.visitka;
+        if (profileName) {
+          data.provider = { "@type": "Person", name: profileName };
+          data.name = `Сайты для небольших дел — ${profileName}`;
+        }
         ld.textContent = JSON.stringify(data);
       } catch {
         /* запасная разметка остаётся */

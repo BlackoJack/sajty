@@ -1,7 +1,7 @@
 /**
  * Yandex Cloud Functions: заявка, публичный контент и админка.
  *
- * Публичный JSON: цены, три позиции, контакты на сайте.
+ * Публичный JSON: цены, три позиции, контакты, имя и ссылка на пример.
  * Закрытый JSON private/notify.json: токен бота, chat id, SMTP. В /api/content его нет.
  * TELEGRAM_* в окружении — запас, пока админка ничего не сохранила.
  * LEADS_BUCKET, LEAD_ACCESS_KEY_ID, LEAD_SECRET_ACCESS_KEY — бакет заявок и контента.
@@ -188,6 +188,24 @@ function sanitizeContacts(input) {
   return { telegram, whatsapp, max, email };
 }
 
+function sanitizeProfile(input) {
+  if (input == null) return { name: "" };
+  if (typeof input !== "object" || Array.isArray(input)) return null;
+  const name = String(input.name ?? "").replace(/\s+/g, " ").trim();
+  if (name.length > 80) return null;
+  return { name };
+}
+
+function sanitizeExample(input) {
+  if (input == null) return { url: "" };
+  if (typeof input !== "object" || Array.isArray(input)) return null;
+  const raw = String(input.url ?? "").trim();
+  if (!raw) return { url: "" };
+  const url = cleanContactUrl(raw, "https:");
+  if (!url) return null;
+  return { url };
+}
+
 function sanitizeContent(input) {
   if (!input || typeof input !== "object") return null;
   const price = {};
@@ -212,9 +230,12 @@ function sanitizeContent(input) {
   }
   const contacts = input.contacts == null ? sanitizeContacts(DEFAULT_CONTENT.contacts) : sanitizeContacts(input.contacts);
   if (!contacts) return null;
+  const profile = sanitizeProfile(input.profile);
+  const example = sanitizeExample(input.example);
+  if (!profile || !example) return null;
   const popups = checkPopups(input.popups);
   if (!popups.ok) return null;
-  return { price, packages, contacts, popups: popups.value };
+  return { price, packages, contacts, profile, example, popups: popups.value };
 }
 
 function cleanPopupId(value) {
@@ -290,6 +311,8 @@ function publicContent(content) {
     price: content.price,
     packages: content.packages,
     contacts: content.contacts,
+    profile: content.profile || { name: "" },
+    example: content.example || { url: "" },
     popups: (content.popups || []).filter((popup) => popup.enabled),
   };
 }

@@ -1,4 +1,10 @@
 {
+  "profile": {
+    "name": ""
+  },
+  "example": {
+    "url": ""
+  },
   "price": {
     "visitka": 9000,
     "landing": 12000,
@@ -31,13 +37,10 @@
     }
   ],
   "contacts": {
-    "telegram": { "label": "@devopsnsk", "url": "https://t.me/devopsnsk" },
-    "whatsapp": { "label": "+7 913 019-71-99", "url": "https://wa.me/79130197199" },
-    "max": {
-      "label": "профиль",
-      "url": "https://max.ru/u/f9LHodD0cOJRMeqwry1H3VOwIUXQYiUHdfjxw4NfCPLSptlnNq9DlD3CL60"
-    },
-    "email": { "label": "devopsnskru@gmail.com", "url": "mailto:devopsnskru@gmail.com" }
+    "telegram": { "label": "", "url": "" },
+    "whatsapp": { "label": "", "url": "" },
+    "max": { "label": "", "url": "" },
+    "email": { "label": "", "url": "" }
   },
   "popups": []
 }

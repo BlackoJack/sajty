@@ -1,5 +1,5 @@
 ---
-import { config, asset } from "../config";
+import { asset } from "../config";
 ---
 
 <section id="examples" class="bg-dark text-paper">
@@ -19,9 +19,7 @@ import { config, asset } from "../config";
     <!-- реальный проект -->
     <article class="mt-12 grid gap-px bg-paper/15 lg:grid-cols-12">
       <a
-        href={config.example.url}
-        target="_blank"
-        rel="noopener"
+        data-example
         class="group block overflow-hidden bg-paper lg:col-span-7"
         aria-label="Открыть сайт-визитку инженера"
       >
@@ -41,9 +39,9 @@ import { config, asset } from "../config";
           сайт для человека, который не любит рассказывать о себе.
         </p>
         <a
-          href={config.example.url}
-          target="_blank"
-          rel="noopener"
+          data-example
+          data-example-cta
+          hidden
           class="mono mt-6 inline-flex items-center gap-2 text-lime transition-opacity hover:opacity-70"
         >
           Открыть сайт

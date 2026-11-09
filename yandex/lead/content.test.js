@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
-const { handler, sanitizeContacts } = require("./index.js");
+const { handler, sanitizeContacts, sanitizeContent } = require("./index.js");
 
 test("пустой контакт прячет кнопку, а половинный Max не проходит", () => {
   const empty = sanitizeContacts({ telegram: "", whatsapp: "", email: "", max: { label: "", url: "" } });
@@ -11,9 +11,9 @@ test("пустой контакт прячет кнопку, а половинн
   assert.equal(empty.whatsapp.url, "");
   assert.equal(empty.email.url, "");
   assert.equal(empty.max.url, "");
-  assert.equal(sanitizeContacts({ telegram: "@devopsnsk", whatsapp: "", email: "", max: { label: "только", url: "" } }), null);
-  const kept = sanitizeContacts({ telegram: "@devopsnsk", whatsapp: "+7 913 019-71-99", email: "devopsnskru@gmail.com", max: { label: "", url: "" } });
-  assert.equal(kept.telegram.url, "https://t.me/devopsnsk");
+  assert.equal(sanitizeContacts({ telegram: "@siteuser", whatsapp: "", email: "", max: { label: "только", url: "" } }), null);
+  const kept = sanitizeContacts({ telegram: "@siteuser", whatsapp: "+7 900 000-00-00", email: "hello@example.com", max: { label: "", url: "" } });
+  assert.equal(kept.telegram.url, "https://t.me/siteuser");
   assert.equal(kept.max.url, "");
 });
 
@@ -273,4 +273,20 @@ test("окно со скидкой видно гостю, сохранение �
     else process.env.GUARD_MIN_MS = previous.wait;
     fs.rmSync(folder, { recursive: true, force: true });
   }
+});
+
+test("старый контент без имени проходит, кривая ссылка на пример — нет", () => {
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, "content.default.json"), "utf8"));
+  const legacy = sanitizeContent({ price: base.price, packages: base.packages, contacts: base.contacts });
+  assert.equal(legacy.profile.name, "");
+  assert.equal(legacy.example.url, "");
+  const named = sanitizeContent({
+    ...base,
+    profile: { name: "Анна" },
+    example: { url: "https://example.com/work" },
+  });
+  assert.equal(named.profile.name, "Анна");
+  assert.equal(named.example.url, "https://example.com/work");
+  assert.equal(sanitizeContent({ ...base, example: { url: "javascript:alert(1)" } }), null);
+  assert.equal(sanitizeContent({ ...base, profile: { name: "А".repeat(81) } }), null);
 });

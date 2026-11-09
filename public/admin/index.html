@@ -199,7 +199,7 @@
   <body>
     <main>
       <h1>Админка</h1>
-      <p class="note">Заявки, цены, три позиции, контакты и окна для гостей. Длинные тексты страницы здесь не правятся.</p>
+      <p class="note">Заявки, цены, три позиции, контакты, имя, ссылка на пример и окна для гостей. Длинные тексты страницы здесь не правятся.</p>
 
       <form id="login">
         <label>Пароль
@@ -238,6 +238,13 @@
           <section class="fold">
             <button type="button" class="fold-strip" data-fold data-pkg-title="2" aria-expanded="false">Каталог</button>
             <div class="fold-body" id="pkg-2" hidden></div>
+          </section>
+          <section class="fold">
+            <button type="button" class="fold-strip" data-fold aria-expanded="false">Подпись</button>
+            <div class="fold-body" hidden>
+              <p class="note">Имя видно внизу страницы. Ссылка открывается с карточки живого примера. Пустые поля ничего не показывают.</p>
+              <div id="about"></div>
+            </div>
           </section>
           <section class="fold">
             <button type="button" class="fold-strip" data-fold aria-expanded="false">Контакты</button>
@@ -356,6 +363,7 @@
       const contentForm = document.getElementById("content-form");
       const pricesBox = document.getElementById("prices");
       const packageBoxes = [0, 1, 2].map((index) => document.getElementById("pkg-" + index));
+      const aboutBox = document.getElementById("about");
       const contactsBox = document.getElementById("contacts");
       const notifyBox = document.getElementById("notify");
       const leadsBox = document.getElementById("leads");
@@ -412,6 +420,7 @@
         const alerts = notify || {};
         pricesBox.replaceChildren();
         packageBoxes.forEach((box) => box.replaceChildren());
+        aboutBox.replaceChildren();
         contactsBox.replaceChildren();
         notifyBox.replaceChildren();
         for (const [id, label] of priceFields) pricesBox.append(field("price." + id, label, content.price[id], { required: true }));
@@ -425,8 +434,10 @@
           box.append(field("pkg." + index + ".bestFor", "Для кого", pkg.bestFor, { multiline: true, required: true }));
           box.append(field("pkg." + index + ".items", "Что входит, по строке", pkg.items.join("\n"), { multiline: true, required: true }));
         });
+        aboutBox.append(field("profile.name", "Имя", content.profile?.name || "", { placeholder: "Имя на сайте" }));
+        aboutBox.append(field("example.url", "Ссылка на пример", content.example?.url || "", { placeholder: "https://" }));
         const contacts = content.contacts || {};
-        contactsBox.append(field("contact.telegram", "Telegram", contacts.telegram?.label || "", { placeholder: "@devopsnsk или ссылка t.me" }));
+        contactsBox.append(field("contact.telegram", "Telegram", contacts.telegram?.label || "", { placeholder: "@name или ссылка t.me" }));
         contactsBox.append(field("contact.whatsapp", "WhatsApp", contacts.whatsapp?.label || "", { placeholder: "+7 913 000-00-00" }));
         contactsBox.append(field("contact.email", "Почта", contacts.email?.label || "", { placeholder: "name@gmail.com" }));
         contactsBox.append(field("contact.maxLabel", "Max, подпись", contacts.max?.label || "", { placeholder: "профиль" }));
@@ -456,6 +467,8 @@
         return {
           price,
           packages,
+          profile: { name: String(data.get("profile.name") || "") },
+          example: { url: String(data.get("example.url") || "") },
           contacts: {
             telegram: String(data.get("contact.telegram") || ""),
             whatsapp: String(data.get("contact.whatsapp") || ""),
@@ -821,7 +834,13 @@
       async function saveSite() {
         const collected = collect();
         await admin("save", {
-          content: { price: collected.price, packages: collected.packages, contacts: collected.contacts },
+          content: {
+            price: collected.price,
+            packages: collected.packages,
+            contacts: collected.contacts,
+            profile: collected.profile,
+            example: collected.example,
+          },
           notify: collected.notify,
         });
         const password = contentForm.querySelector("[name='notify.smtpPassword']");

@@ -1,11 +1,12 @@
 ---
 import "../styles/global.css";
 import { config, asset } from "../config";
+import defaults from "../../yandex/lead/content.default.json";
 
 const { title, description, ogImage } = config.meta;
 
-// site берётся из astro.config (SITE_URL в CI), config.siteUrl — только запасной вариант для локальной сборки
-const siteUrl = (Astro.site ?? new URL(config.siteUrl)).toString().replace(/\/$/, "");
+// site берётся из astro.config: SITE_URL в CI или домен по умолчанию
+const siteUrl = (Astro.site ?? new URL("https://delam.site")).toString().replace(/\/$/, "");
 const siteRoot = `${siteUrl}${import.meta.env.BASE_URL}`;
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
 const ogUrl = new URL(asset(ogImage), siteUrl).toString();
@@ -13,17 +14,16 @@ const ogUrl = new URL(asset(ogImage), siteUrl).toString();
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Service",
-  name: `${config.role} — ${config.name}`,
+  name: "Сайты для небольших дел",
   description,
   url: siteRoot,
   areaServed: "RU",
   availableLanguage: "ru",
   serviceType: "Создание сайтов",
-  provider: { "@type": "Person", name: config.name },
   offers: {
     "@type": "Offer",
     priceCurrency: "RUB",
-    price: config.price.visitka,
+    price: defaults.price.visitka,
     description: "Сайт-визитка",
   },
 };
@@ -43,7 +43,7 @@ const jsonLd = {
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
-    <meta property="og:site_name" content={config.role} />
+    <meta property="og:site_name" content="Сайты для небольших дел" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />

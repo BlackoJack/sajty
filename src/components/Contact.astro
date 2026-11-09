@@ -16,53 +16,57 @@ import ContactIcon from "./ContactIcon.astro";
           что подойдёт и сколько это займёт. Если сайт вам не нужен — тоже скажу.
         </p>
 
-        <div class="mt-10 space-y-px border-y border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]">
+        <div data-contact-group class="mt-10 space-y-px border-y border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)]" hidden>
           <a
             data-contact="telegram"
-            href={config.contacts.telegram.url}
+            href=""
+            hidden
             target="_blank"
             rel="noopener"
             class="group flex items-center justify-between gap-4 py-4"
           >
             <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="telegram" />Telegram</span>
             <span class="flex items-center gap-3 text-[16px]">
-              <span data-contact-label>{config.contacts.telegram.label}</span>
+              <span data-contact-label></span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
             data-contact="whatsapp"
-            href={config.contacts.whatsapp.url}
+            href=""
+            hidden
             target="_blank"
             rel="noopener"
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
             <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="whatsapp" />WhatsApp</span>
             <span class="flex items-center gap-3 text-[16px]">
-              <span data-contact-label>{config.contacts.whatsapp.label}</span>
+              <span data-contact-label></span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
             data-contact="max"
-            href={config.contacts.max.url}
+            href=""
+            hidden
             target="_blank"
             rel="noopener"
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
             <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="max" />Max</span>
             <span class="flex items-center gap-3 text-[16px]">
-              <span data-contact-label>{config.contacts.max.label}</span>
+              <span data-contact-label></span>
               <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </span>
           </a>
           <a
             data-contact="email"
-            href={config.contacts.email.url}
+            href=""
+            hidden
             class="group flex items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] py-4"
           >
             <span class="mono flex items-center gap-2 text-muted"><ContactIcon name="email" />Почта</span>
-            <span class="text-[16px]" data-contact-label>{config.contacts.email.label}</span>
+            <span class="text-[16px]" data-contact-label></span>
           </a>
         </div>
 
@@ -124,11 +128,8 @@ import ContactIcon from "./ContactIcon.astro";
 </section>
 
 <script>
-  import { config } from "../config";
-
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const status = document.getElementById("form-status");
-  const fallbackTelegram = config.contacts.telegram.url;
   let guardToken = "";
 
   function refreshGuard() {
@@ -144,16 +145,26 @@ import ContactIcon from "./ContactIcon.astro";
 
   refreshGuard();
 
+  function telegramHref() {
+    const telegram = document.querySelector<HTMLAnchorElement>("[data-contact='telegram']");
+    const raw = telegram?.getAttribute("href") || "";
+    if (!telegram || telegram.hidden || !raw.startsWith("https://")) return "";
+    return `${telegram.href.split("?")[0]}`;
+  }
+
   function telegramFallback(name: string, contact: string, task: string, lead: string) {
     if (!status) return;
-    const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
-    const telegram = document.querySelector<HTMLAnchorElement>("[data-contact='telegram']");
-    const href = `${telegram?.href || fallbackTelegram}?text=${text}`;
+    const href = telegramHref();
     status.replaceChildren();
+    if (!href) {
+      status.textContent = lead;
+      return;
+    }
+    const text = encodeURIComponent(`Здравствуйте! Меня зовут ${name}.\nСвязь: ${contact}\n${task}`);
     status.append(lead);
     const link = document.createElement("a");
     link.className = "underline";
-    link.href = href;
+    link.href = `${href}?text=${text}`;
     link.target = "_blank";
     link.rel = "noopener";
     link.textContent = "Telegram";
@@ -206,7 +217,7 @@ import ContactIcon from "./ContactIcon.astro";
           return;
         }
         if (response.status === 429) {
-          telegramFallback(name, contact, task, "С этого адреса уже много заявок. Напишите напрямую: ");
+          telegramFallback(name, contact, task, telegramHref() ? "С этого адреса уже много заявок. Напишите напрямую: " : "С этого адреса уже много заявок. Напишите через контакты выше.");
           return;
         }
 
@@ -219,11 +230,18 @@ import ContactIcon from "./ContactIcon.astro";
         form.reset();
         refreshGuard();
       } catch {
+        const direct = telegramHref();
         telegramFallback(
           name,
           contact,
           task,
-          failedStatus === 502 ? "Заявка не сохранилась. Напишите напрямую: " : "Форма на этом хостинге не подключена. Напишите напрямую: ",
+          failedStatus === 502
+            ? direct
+              ? "Заявка не сохранилась. Напишите напрямую: "
+              : "Заявка не сохранилась. Напишите через контакты выше."
+            : direct
+              ? "Форма на этом хостинге не подключена. Напишите напрямую: "
+              : "Форма на этом хостинге не подключена. Напишите через контакты выше.",
         );
       } finally {
         if (button) button.disabled = false;

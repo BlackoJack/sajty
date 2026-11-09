@@ -1,5 +1,4 @@
 ---
-import { config } from "../config";
 import ContactIcon from "./ContactIcon.astro";
 const year = 2026;
 ---
@@ -8,15 +7,15 @@ const year = 2026;
   <div class="mx-auto w-full max-w-[1240px] px-6 py-12 md:px-10">
     <div class="flex flex-col gap-8 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] pt-8 md:flex-row md:items-start md:justify-between">
       <div>
-        <p class="font-display text-[18px] font-semibold tracking-[-0.02em]">{config.role}</p>
-        <p class="mono mt-2 text-muted">{config.name} · {config.city}</p>
+        <p class="font-display text-[18px] font-semibold tracking-[-0.02em]">Сайты для небольших дел</p>
+        <p class="mono mt-2 text-muted" data-profile-name hidden></p>
       </div>
 
       <nav class="flex flex-wrap gap-x-7 gap-y-2" aria-label="Контакты">
-        <a data-contact="telegram" href={config.contacts.telegram.url} class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="telegram" size={15} />Telegram</a>
-        <a data-contact="whatsapp" href={config.contacts.whatsapp.url} class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="whatsapp" size={15} />WhatsApp</a>
-        <a data-contact="max" href={config.contacts.max.url} class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="max" size={15} />Max</a>
-        <a data-contact="email" href={config.contacts.email.url} class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink"><ContactIcon name="email" size={15} />Почта</a>
+        <a data-contact="telegram" href="" hidden class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="telegram" size={15} />Telegram</a>
+        <a data-contact="whatsapp" href="" hidden class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="whatsapp" size={15} />WhatsApp</a>
+        <a data-contact="max" href="" hidden class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink" target="_blank" rel="noopener"><ContactIcon name="max" size={15} />Max</a>
+        <a data-contact="email" href="" hidden class="inline-flex items-center gap-1.5 text-[14px] text-ink/75 transition-colors hover:text-ink"><ContactIcon name="email" size={15} />Почта</a>
         <a href="#top" class="text-[14px] text-ink/75 transition-colors hover:text-ink">Наверх ↑</a>
       </nav>
     </div>
@@ -28,8 +27,8 @@ const year = 2026;
   </div>
 </footer>
 
-<div data-contact-group class="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] bg-paper/95 p-3 backdrop-blur md:hidden">
-  <a data-contact="telegram" href={config.contacts.telegram.url} class="btn btn-lime w-full" target="_blank" rel="noopener">
+<div data-contact-group class="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] bg-paper/95 p-3 backdrop-blur md:hidden" hidden>
+  <a data-contact="telegram" href="" hidden class="btn btn-lime w-full" target="_blank" rel="noopener">
     <ContactIcon name="telegram" size={16} />
     Написать в Telegram
     <span aria-hidden="true">→</span>

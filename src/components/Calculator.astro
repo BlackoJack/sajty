@@ -1,11 +1,12 @@
 ---
-import { money, config } from "../config";
+import { money } from "../config";
 import { packages } from "../data/packages";
+import defaults from "../../yandex/lead/content.default.json";
 
 const extras = [
-  { id: "texts", label: "Помочь с текстами", price: config.price.texts, monthly: false },
-  { id: "setup", label: "Домен, почта, аналитика", price: config.price.setup, monthly: false },
-  { id: "support", label: "Поддержка после запуска", price: config.price.support, monthly: true },
+  { id: "texts", label: "Помочь с текстами", price: defaults.price.texts, monthly: false },
+  { id: "setup", label: "Домен, почта, аналитика", price: defaults.price.setup, monthly: false },
+  { id: "support", label: "Поддержка после запуска", price: defaults.price.support, monthly: true },
 ];
 ---
 
@@ -82,7 +83,7 @@ const extras = [
         <div class="border border-[color-mix(in_srgb,var(--color-ink)_13%,transparent)] bg-paper p-6 md:p-7 lg:sticky lg:top-24">
           <p class="mono text-muted">Примерно</p>
           <p id="calc-total" class="mt-3 font-display text-[clamp(30px,4vw,42px)] font-semibold tracking-[-0.03em]">
-            {money(config.price.visitka)} ₽
+            {money(defaults.price.visitka)} ₽
           </p>
           <p id="calc-month" class="mono mt-2 hidden text-muted"></p>
 
