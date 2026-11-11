@@ -145,7 +145,7 @@
         if (data.offers && Number.isFinite(price.visitka)) data.offers.price = price.visitka;
         if (profileName) {
           data.provider = { "@type": "Person", name: profileName };
-          data.name = `Sitly — ${profileName}`;
+          data.name = `Sitly.ru — ${profileName}`;
         }
         ld.textContent = JSON.stringify(data);
       } catch {
@@ -234,7 +234,7 @@
     closeButton.textContent = "×";
     const kicker = document.createElement("p");
     kicker.className = "popup-kicker";
-    kicker.textContent = "Sitly";
+    kicker.textContent = "Sitly.ru";
     const title = document.createElement("h2");
     title.id = "popup-title";
     title.className = "popup-title";

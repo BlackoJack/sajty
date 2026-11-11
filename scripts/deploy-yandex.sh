@@ -169,11 +169,12 @@ else
 fi
 
 domain="$(yc serverless api-gateway get --name "$gw_name" --format json | json_field domain)"
-site_url="https://${domain}"
+site_url="${PUBLIC_SITE_URL:-https://sitly.ru}"
 
 if [[ "${SKIP_SITE:-}" == "1" ]]; then
   echo
   echo "Сайт: ${site_url}"
+  echo "Шлюз: https://${domain}"
   echo "Админка: ${site_url}/admin"
   echo "Форма: ${site_url}/api/lead"
   exit 0
