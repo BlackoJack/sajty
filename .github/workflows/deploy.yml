@@ -83,11 +83,12 @@ jobs:
           YC_LEAD_KEY: ${{ secrets.YC_LEAD_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_RELAY_SECRET: ${{ secrets.TG_RELAY_SECRET }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           missing=0
-          for name in YC_SA_JSON YC_FOLDER_ID YC_LEAD_KEY ADMIN_PASSWORD; do
+          for name in YC_SA_JSON YC_FOLDER_ID YC_LEAD_KEY ADMIN_PASSWORD TG_RELAY_SECRET; do
             if [ -z "${!name}" ]; then
               echo "Нет секрета $name"
               missing=1
@@ -101,6 +102,8 @@ jobs:
           printf '%s\n' \
             "TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}" \
             "TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}" \
+            "TG_RELAY_SECRET=${TG_RELAY_SECRET}" \
+            "TG_RELAY_URL=https://sitly.ru/api/tg-relay" \
             "ADMIN_PASSWORD=${ADMIN_PASSWORD}" > .env
           yc config set service-account-key "$RUNNER_TEMP/sa.json"
           yc config set folder-id "$YC_FOLDER_ID"

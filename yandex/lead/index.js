@@ -797,7 +797,7 @@ async function deliverLead(number, name, contact, task, offer) {
       )
     : Promise.resolve(false);
   const telegram = telegramConfigured
-    ? withTimeout(sendTelegram(notify.telegramToken, notify.telegramChatId, text), 4000)
+    ? withTimeout(sendTelegram(notify.telegramToken, notify.telegramChatId, text), 9000)
     : Promise.resolve(false);
   const [mailOk, telegramOk] = await Promise.all([mail, telegram]);
   return {
@@ -809,6 +809,22 @@ async function deliverLead(number, name, contact, task, offer) {
 }
 
 async function sendTelegram(token, chatId, text) {
+  // Yandex Cloud often cannot reach api.telegram.org — relay via Cloudflare Worker.
+  const relayUrl = String(process.env.TG_RELAY_URL || "").trim();
+  const relaySecret = String(process.env.TG_RELAY_SECRET || "").trim();
+  if (relayUrl && relaySecret) {
+    const response = await fetch(relayUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${relaySecret}`,
+        "user-agent": "SitlyLeadRelay/1.0",
+      },
+      body: JSON.stringify({ token, chatId, text }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return response.ok;
+  }
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },

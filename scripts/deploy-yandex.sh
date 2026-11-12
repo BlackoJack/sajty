@@ -50,6 +50,17 @@ if [[ -z "$admin_password" ]]; then
   echo "В .env записан ADMIN_PASSWORD"
 fi
 
+tg_relay_secret="$(read_env TG_RELAY_SECRET)"
+if [[ -z "$tg_relay_secret" ]]; then
+  tg_relay_secret="$(openssl rand -hex 24)"
+  printf '\nTG_RELAY_SECRET=%s\n' "$tg_relay_secret" >> .env
+  echo "В .env записан TG_RELAY_SECRET"
+fi
+tg_relay_url="$(read_env TG_RELAY_URL)"
+if [[ -z "$tg_relay_url" ]]; then
+  tg_relay_url="https://sitly.ru/api/tg-relay"
+fi
+
 json_field() {
   node -e '
     let s = "";
@@ -142,6 +153,8 @@ yc serverless function version create \
   --service-account-id "$sa_id" \
   --environment "TELEGRAM_BOT_TOKEN=${token}" \
   --environment "TELEGRAM_CHAT_ID=${chat_id}" \
+  --environment "TG_RELAY_URL=${tg_relay_url}" \
+  --environment "TG_RELAY_SECRET=${tg_relay_secret}" \
   --environment "LEADS_BUCKET=${leads_bucket}" \
   --environment "LEAD_ACCESS_KEY_ID=${lead_access_key}" \
   --environment "LEAD_SECRET_ACCESS_KEY=${lead_secret_key}" \

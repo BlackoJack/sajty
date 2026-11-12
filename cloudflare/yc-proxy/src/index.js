@@ -168,11 +168,70 @@ function cacheKeyFor(request, url) {
   });
 }
 
+/**
+ * Yandex Cloud can't reach api.telegram.org; the lead function POSTs here,
+ * and the Worker forwards to Telegram from the edge.
+ */
+async function handleTgRelay(request, env) {
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+  const secret = String(env.TG_RELAY_SECRET || "");
+  if (!secret) {
+    return new Response("Telegram relay not configured", { status: 503 });
+  }
+  const auth = request.headers.get("authorization") || "";
+  const got = auth.startsWith("Bearer ")
+    ? auth.slice(7).trim()
+    : (request.headers.get("x-tg-relay-secret") || "").trim();
+  if (!got || got !== secret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Bad JSON", { status: 400 });
+  }
+  const token = String(body?.token || "").trim();
+  const chatId = String(body?.chatId ?? body?.chat_id ?? "").trim();
+  const text = String(body?.text || "");
+  if (!/^\d{6,}:[A-Za-z0-9_-]{20,}$/.test(token)) {
+    return new Response("Bad token", { status: 400 });
+  }
+  if (!/^-?\d{1,20}$/.test(chatId)) {
+    return new Response("Bad chat id", { status: 400 });
+  }
+  if (!text || text.length > 4000) {
+    return new Response("Bad text", { status: 400 });
+  }
+
+  const tg = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: true,
+    }),
+  });
+  if (!tg.ok) {
+    const detail = (await tg.text()).slice(0, 240);
+    return new Response(detail || "Telegram error", { status: 502 });
+  }
+  return Response.json({ ok: true });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const redirect = wwwToApexRedirect(url);
     if (redirect) return redirect;
+
+    if (url.pathname === "/api/tg-relay") {
+      return handleTgRelay(request, env);
+    }
 
     const originBase = originFor(url.hostname, env);
     if (!originBase) {
