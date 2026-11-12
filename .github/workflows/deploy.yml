@@ -108,6 +108,10 @@ jobs:
       - name: Deploy to Yandex
         env:
           PUBLIC_SITE_URL: https://sitly.ru
+          PUBLIC_YANDEX_METRIKA_ID: ${{ secrets.PUBLIC_YANDEX_METRIKA_ID }}
+          PUBLIC_YANDEX_VERIFICATION: ${{ secrets.PUBLIC_YANDEX_VERIFICATION }}
+          PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ secrets.PUBLIC_GOOGLE_SITE_VERIFICATION }}
+          PUBLIC_INDEXNOW_KEY: ${{ secrets.PUBLIC_INDEXNOW_KEY }}
         run: bash scripts/deploy-yandex.sh
 
       - name: Purge Cloudflare cache
@@ -119,6 +123,12 @@ jobs:
             exit 0
           fi
           bash scripts/cf-purge.sh sitly.ru
+
+      - name: SEO ping
+        env:
+          PUBLIC_SITE_URL: https://sitly.ru
+          PUBLIC_INDEXNOW_KEY: ${{ secrets.PUBLIC_INDEXNOW_KEY }}
+        run: bash scripts/seo-ping.sh
 
   cloudflare-worker:
     runs-on: ubuntu-latest

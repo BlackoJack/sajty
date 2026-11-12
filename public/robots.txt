@@ -1,2 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api
+Disallow: /api/
+Disallow: /demo
+Disallow: /demo/
+
+Sitemap: https://sitly.ru/sitemap-index.xml

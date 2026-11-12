@@ -11,22 +11,36 @@ const siteRoot = `${siteUrl}${import.meta.env.BASE_URL}`;
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
 const ogUrl = new URL(asset(ogImage), siteUrl).toString();
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Service",
-  name: "Sitly.ru",
-  description,
-  url: siteRoot,
-  areaServed: "RU",
-  availableLanguage: "ru",
-  serviceType: "Создание сайтов",
-  offers: {
-    "@type": "Offer",
-    priceCurrency: "RUB",
-    price: defaults.price.visitka,
-    description: "Сайт-визитка",
+const metrikaId = (import.meta.env.PUBLIC_YANDEX_METRIKA_ID || "").trim();
+const yandexVerify = (import.meta.env.PUBLIC_YANDEX_VERIFICATION || "").trim();
+const googleVerify = (import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION || "").trim();
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Sitly.ru",
+    url: siteRoot,
+    inLanguage: "ru-RU",
+    description,
   },
-};
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Sitly.ru",
+    description,
+    url: siteRoot,
+    areaServed: "RU",
+    availableLanguage: "ru",
+    serviceType: "Создание сайтов",
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "RUB",
+      price: defaults.price.visitka,
+      description: "Сайт-визитка",
+    },
+  },
+];
 ---
 
 <!doctype html>
@@ -36,10 +50,13 @@ const jsonLd = {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={asset("favicon.svg")} type="image/svg+xml" />
     <link rel="sitemap" href={asset("sitemap-index.xml")} />
     <meta name="theme-color" content="#f1eee7" />
+    {yandexVerify && <meta name="yandex-verification" content={yandexVerify} />}
+    {googleVerify && <meta name="google-site-verification" content={googleVerify} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
@@ -53,6 +70,39 @@ const jsonLd = {
     <meta name="twitter:card" content="summary_large_image" />
 
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    {
+      metrikaId && (
+        <>
+          <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+          <script
+            is:inline
+            set:html={`
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();
+for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+ym(${JSON.stringify(Number(metrikaId) || metrikaId)}, "init", {
+  clickmap:true,
+  trackLinks:true,
+  accurateTrackBounce:true,
+  webvisor:true
+});
+`}
+          />
+          <noscript>
+            <div>
+              <img
+                src={`https://mc.yandex.ru/watch/${metrikaId}`}
+                style="position:absolute; left:-9999px;"
+                alt=""
+              />
+            </div>
+          </noscript>
+        </>
+      )
+    }
   </head>
 
   <body class="grain antialiased">

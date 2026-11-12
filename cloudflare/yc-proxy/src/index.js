@@ -78,6 +78,19 @@ function cachePolicy(pathname) {
       edge: "public, max-age=31536000",
     };
   }
+  // robots / sitemaps must refresh quickly after deploy
+  if (
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap-index.xml" ||
+    /^\/sitemap-\d+\.xml$/.test(pathname) ||
+    pathname === "/sitly-indexnow.txt"
+  ) {
+    return {
+      store: true,
+      browser: "public, max-age=0, must-revalidate",
+      edge: "public, max-age=300",
+    };
+  }
   if (STATIC_EXT.test(pathname)) {
     return {
       store: true,
@@ -110,6 +123,16 @@ function applyCacheHeaders(headers, policy) {
   // Origin/object storage sometimes sends weak/conflicting hints.
   headers.delete("Expires");
   headers.delete("Pragma");
+}
+
+function applySeoHeaders(headers, pathname) {
+  if (
+    isBypassPath(pathname) ||
+    pathname === "/demo" ||
+    pathname.startsWith("/demo/")
+  ) {
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
 }
 
 async function proxyToOrigin(request, target) {
@@ -191,6 +214,7 @@ export default {
     const upstream = await proxyToOrigin(upstreamReq, target);
     const headers = new Headers(upstream.headers);
     applyCacheHeaders(headers, policy);
+    applySeoHeaders(headers, url.pathname);
     headers.set("X-Yc-Proxy-Cache", canCache ? "MISS" : "BYPASS");
 
     let body = upstream.body;

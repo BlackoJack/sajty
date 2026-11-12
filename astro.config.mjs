@@ -16,7 +16,14 @@ const base = process.env.BASE_PATH || "/";
 export default defineConfig({
   site,
   base,
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      filter: (page) =>
+        !page.includes("/admin") &&
+        !page.includes("/api") &&
+        !page.includes("/demo"),
+    }),
+  ],
   vite: {
     plugins: [
       tailwindcss(),
