@@ -32,6 +32,18 @@ function originFor(host, env) {
   return null;
 }
 
+/** Canonical host is apex (no www) — matches SITE_URL / sitemap. */
+function wwwToApexRedirect(url) {
+  const host = url.hostname.toLowerCase();
+  if (!host.startsWith("www.")) return null;
+  const apex = host.slice(4);
+  if (apex !== "sitly.ru" && apex !== "gipsplamya.ru") return null;
+  const target = new URL(url.toString());
+  target.hostname = apex;
+  target.protocol = "https:";
+  return Response.redirect(target.toString(), 301);
+}
+
 function isBypassPath(pathname) {
   return (
     pathname === "/api" ||
@@ -136,6 +148,9 @@ function cacheKeyFor(request, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const redirect = wwwToApexRedirect(url);
+    if (redirect) return redirect;
+
     const originBase = originFor(url.hostname, env);
     if (!originBase) {
       return new Response("Unknown host", { status: 404 });
