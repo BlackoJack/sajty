@@ -1,0 +1,22 @@
+[
+  {
+    "description": "Cache HTML and static; TTLs from Worker CDN-Cache-Control",
+    "expression": "(not starts_with(http.request.uri.path, \"/api/\")) and (http.request.uri.path ne \"/api\") and (not starts_with(http.request.uri.path, \"/admin\"))",
+    "action": "set_cache_settings",
+    "enabled": true,
+    "action_parameters": {
+      "cache": true,
+      "edge_ttl": { "mode": "respect_origin" },
+      "browser_ttl": { "mode": "respect_origin" }
+    }
+  },
+  {
+    "description": "Never cache API or admin",
+    "expression": "(starts_with(http.request.uri.path, \"/api/\")) or (http.request.uri.path eq \"/api\") or (starts_with(http.request.uri.path, \"/admin\"))",
+    "action": "set_cache_settings",
+    "enabled": true,
+    "action_parameters": {
+      "cache": false
+    }
+  }
+]

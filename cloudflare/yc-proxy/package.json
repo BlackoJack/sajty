@@ -1,0 +1,11 @@
+{
+  "name": "yc-proxy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.160.0"
+  }
+}

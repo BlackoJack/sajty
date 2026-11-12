@@ -46,4 +46,12 @@ gh secret set TELEGRAM_BOT_TOKEN --body "$token"
 gh secret set TELEGRAM_CHAT_ID --body "$chat_id"
 gh secret set ADMIN_PASSWORD --body "$admin_password"
 
+if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+  gh secret set CLOUDFLARE_API_TOKEN --body "$CLOUDFLARE_API_TOKEN"
+  gh secret set CLOUDFLARE_ACCOUNT_ID --body "${CLOUDFLARE_ACCOUNT_ID:-73d901a62883a2338be9fc9f14b61035}"
+  echo "Секреты Cloudflare записаны"
+else
+  echo "CLOUDFLARE_API_TOKEN не задан в окружении — CF-секреты пропущены"
+fi
+
 echo "Секреты записаны: YC_SA_JSON, YC_LEAD_KEY, YC_FOLDER_ID, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_PASSWORD"

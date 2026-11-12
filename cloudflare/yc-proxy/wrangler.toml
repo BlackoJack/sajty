@@ -1,0 +1,24 @@
+name = "yc-proxy"
+main = "src/index.js"
+compatibility_date = "2025-11-01"
+account_id = "73d901a62883a2338be9fc9f14b61035"
+
+[vars]
+ORIGIN_SITLY = "https://d5dtj8vd79u87svcao1i.764nr5vy.apigw.yandexcloud.net"
+ORIGIN_GIPS = "https://d5d5sag4v80r468p7tnr.4kscn31j.apigw.yandexcloud.net"
+
+[[routes]]
+pattern = "sitly.ru"
+custom_domain = true
+
+[[routes]]
+pattern = "www.sitly.ru"
+custom_domain = true
+
+[[routes]]
+pattern = "gipsplamya.ru"
+custom_domain = true
+
+[[routes]]
+pattern = "www.gipsplamya.ru"
+custom_domain = true
